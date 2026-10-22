@@ -31,12 +31,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import se.healthbridge.app.BuildConfig
+import se.healthbridge.app.R
 import se.healthbridge.app.appContainer
 
 private val INTERVALS = listOf(1, 3, 6, 12, 24)
@@ -55,14 +57,11 @@ fun SettingsScreen(vm: MainViewModel, onRequestPermissions: () -> Unit) {
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        ScreenTitle("Inställningar")
+        ScreenTitle(stringResource(R.string.settings_title))
 
         // --- Withings developer app ---
-        SectionHeader("Withings-utvecklarapp")
-        SupportingText(
-            "Skapa en app (Public API) på developer.withings.com. Ange samma Callback-URL där som här – " +
-                "vilken https-adress som helst fungerar, HealthBridge fångar omdirigeringen innan sidan laddas.",
-        )
+        SectionHeader(stringResource(R.string.settings_withings_app))
+        SupportingText(stringResource(R.string.settings_withings_help))
         val creds = current.credentials
         var clientId by rememberSaveable(creds.clientId) { mutableStateOf(creds.clientId) }
         var clientSecret by rememberSaveable(creds.clientSecret) { mutableStateOf(creds.clientSecret) }
@@ -72,26 +71,26 @@ fun SettingsScreen(vm: MainViewModel, onRequestPermissions: () -> Unit) {
         OutlinedTextField(
             value = clientId,
             onValueChange = { clientId = it },
-            label = { Text("Client ID") },
+            label = { Text(stringResource(R.string.client_id)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
         OutlinedTextField(
             value = clientSecret,
             onValueChange = { clientSecret = it },
-            label = { Text("Client Secret") },
+            label = { Text(stringResource(R.string.client_secret)) },
             singleLine = true,
             visualTransformation = if (showSecret) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             trailingIcon = {
-                TextButton(onClick = { showSecret = !showSecret }) { Text(if (showSecret) "Dölj" else "Visa") }
+                TextButton(onClick = { showSecret = !showSecret }) { Text(stringResource(if (showSecret) R.string.hide else R.string.show)) }
             },
             modifier = Modifier.fillMaxWidth(),
         )
         OutlinedTextField(
             value = redirectUri,
             onValueChange = { redirectUri = it },
-            label = { Text("Callback-URL") },
+            label = { Text(stringResource(R.string.callback_url)) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
             modifier = Modifier.fillMaxWidth(),
@@ -100,69 +99,71 @@ fun SettingsScreen(vm: MainViewModel, onRequestPermissions: () -> Unit) {
             Button(
                 onClick = { vm.saveCredentials(clientId, clientSecret, redirectUri) },
                 enabled = clientId != creds.clientId || clientSecret != creds.clientSecret || redirectUri != creds.redirectUri,
-            ) { Text("Spara") }
+            ) { Text(stringResource(R.string.save)) }
             OutlinedButton(onClick = { openUrl(context, "https://developer.withings.com/dashboard/") }) {
-                Text("Öppna Withings Developer")
+                Text(stringResource(R.string.open_withings_developer))
             }
         }
 
         // --- Connection ---
-        SectionHeader("Anslutning")
+        SectionHeader(stringResource(R.string.settings_connection))
         if (current.withingsConnected) {
-            Text("Ansluten som användar-ID ${current.tokens?.userId.orEmpty()}")
-            OutlinedButton(onClick = { vm.disconnectWithings() }) { Text("Koppla från Withings") }
+            Text(stringResource(R.string.settings_connected_as, current.tokens?.userId.orEmpty()))
+            OutlinedButton(onClick = { vm.disconnectWithings() }) { Text(stringResource(R.string.disconnect_withings)) }
         } else {
-            Button(onClick = { vm.startWithingsLogin() }, enabled = creds.isComplete) { Text("Logga in på Withings") }
+            Button(onClick = { vm.startWithingsLogin() }, enabled = creds.isComplete) { Text(stringResource(R.string.withings_log_in)) }
             ExternalLogin(vm)
         }
 
         // --- What to sync ---
-        SectionHeader("Vad ska synkas till Health Connect")
+        SectionHeader(stringResource(R.string.settings_what))
         val options = current.options
         SwitchRow(
-            title = "Mätningar",
-            subtitle = "Vikt, fett%, fettfri massa, benmassa, vatten, BMR, blodtryck, puls, SpO₂, temperatur, VO₂ max",
+            title = stringResource(R.string.opt_measures),
+            subtitle = stringResource(R.string.opt_measures_desc),
             checked = options.measures,
             onChange = { vm.saveOptions(options.copy(measures = it)) },
         )
         SwitchRow(
-            title = "Sömn",
-            subtitle = "Sömnpass med faser (Sleep Analyzer / klocka)",
+            title = stringResource(R.string.opt_sleep),
+            subtitle = stringResource(R.string.opt_sleep_desc),
             checked = options.sleep,
             onChange = { vm.saveOptions(options.copy(sleep = it)) },
         )
         SwitchRow(
-            title = "Aktivitet",
-            subtitle = "Steg, distans och kalorier från en Withings-klocka. Lämna av om telefonen/Galaxy Watch redan räknar steg – annars dubbelräknas de.",
+            title = stringResource(R.string.opt_activity),
+            subtitle = stringResource(R.string.opt_activity_desc),
             checked = options.activity,
             onChange = { vm.saveOptions(options.copy(activity = it)) },
         )
 
-        SectionHeader("Hur ofta")
-        ChipRow(INTERVALS, options.intervalHours, label = { if (it == 24) "1 dygn" else "$it h" }) {
+        SectionHeader(stringResource(R.string.settings_how_often))
+        ChipRow(INTERVALS, options.intervalHours, label = {
+            if (it == 24) stringResource(R.string.interval_chip_day) else stringResource(R.string.interval_chip_hours, it)
+        }) {
             vm.saveOptions(options.copy(intervalHours = it))
         }
-        SupportingText("Android kan skjuta upp bakgrundsjobb för att spara batteri.")
+        SupportingText(stringResource(R.string.settings_battery_note))
 
-        SectionHeader("Historik att hämta")
-        ChipRow(BACKFILL, options.backfillDays, label = { "$it dagar" }) {
+        SectionHeader(stringResource(R.string.settings_history))
+        ChipRow(BACKFILL, options.backfillDays, label = { stringResource(R.string.days_chip, it) }) {
             vm.saveOptions(options.copy(backfillDays = it))
         }
-        SupportingText("Gäller första synken och \"Hämta om historik\". Redan synkade värden dubbleras inte.")
+        SupportingText(stringResource(R.string.settings_history_note))
         OutlinedButton(onClick = { vm.refetchHistory() }, enabled = current.withingsConnected) {
-            Text("Hämta om historik")
+            Text(stringResource(R.string.refetch_history))
         }
 
         // --- Health Connect ---
         SectionHeader("Health Connect")
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = onRequestPermissions) { Text("Behörigheter") }
+            OutlinedButton(onClick = onRequestPermissions) { Text(stringResource(R.string.hc_permissions)) }
             OutlinedButton(onClick = {
                 runCatching { context.startActivity(context.appContainer.healthConnect.manageDataIntent()) }
-            }) { Text("Hantera data") }
+            }) { Text(stringResource(R.string.hc_manage_data)) }
         }
 
-        SupportingText("HealthBridge ${BuildConfig.VERSION_NAME}")
+        SupportingText(stringResource(R.string.version_label, BuildConfig.VERSION_NAME))
     }
 }
 
@@ -173,29 +174,26 @@ private fun ExternalLogin(vm: MainViewModel) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     var pasted by rememberSaveable { mutableStateOf("") }
     TextButton(onClick = { expanded = !expanded }) {
-        Text(if (expanded) "Dölj alternativ inloggning" else "Fungerar inte inloggningen? Logga in via webbläsaren")
+        Text(stringResource(if (expanded) R.string.ext_login_hide else R.string.ext_login_show))
     }
     if (!expanded) return
-    SupportingText(
-        "1. Tryck \"Öppna webbläsare\" och logga in. 2. När du hamnar på Callback-sidan (den kan visa ett fel), " +
-            "kopiera hela adressen. 3. Klistra in den här och tryck \"Slutför\" inom 30 sekunder.",
-    )
+    SupportingText(stringResource(R.string.ext_login_steps))
     OutlinedButton(onClick = {
         vm.externalLoginUrl()?.let { url ->
             runCatching { CustomTabsIntent.Builder().build().launchUrl(context, url.toUri()) }
                 .onFailure { openUrl(context, url) }
         }
-    }) { Text("Öppna webbläsare") }
+    }) { Text(stringResource(R.string.ext_open_browser)) }
     OutlinedTextField(
         value = pasted,
         onValueChange = { pasted = it },
-        label = { Text("Adress med ?code=…") },
+        label = { Text(stringResource(R.string.ext_paste_label)) },
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
         modifier = Modifier.fillMaxWidth(),
     )
     Button(onClick = { vm.handleRedirect(pasted); pasted = "" }, enabled = pasted.contains("code=")) {
-        Text("Slutför")
+        Text(stringResource(R.string.ext_finish))
     }
 }
 
@@ -210,7 +208,7 @@ private fun SwitchRow(title: String, subtitle: String, checked: Boolean, onChang
 }
 
 @Composable
-private fun ChipRow(values: List<Int>, selected: Int, label: (Int) -> String, onSelect: (Int) -> Unit) {
+private fun ChipRow(values: List<Int>, selected: Int, label: @Composable (Int) -> String, onSelect: (Int) -> Unit) {
     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         values.forEach { value ->
             FilterChip(selected = value == selected, onClick = { onSelect(value) }, label = { Text(label(value)) })

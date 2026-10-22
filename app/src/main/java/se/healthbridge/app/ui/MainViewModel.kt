@@ -4,6 +4,7 @@ import android.app.Application
 import android.net.Uri
 import android.os.PowerManager
 import android.webkit.CookieManager
+import androidx.annotation.StringRes
 import androidx.health.connect.client.HealthConnectClient
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import se.healthbridge.app.R
 import se.healthbridge.app.appContainer
 import se.healthbridge.app.data.AppSettings
 import se.healthbridge.app.data.LogEntry
@@ -105,7 +107,7 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
 
     fun onPermissionsResult(granted: Set<String>) {
         refreshHealthConnect()
-        if (granted.isEmpty()) message("Inga behörigheter gavs")
+        if (granted.isEmpty()) message(text(R.string.msg_no_permissions))
     }
 
     // --- Withings ---------------------------------------------------------------------------
@@ -113,7 +115,7 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
     fun saveCredentials(clientId: String, clientSecret: String, redirectUri: String) {
         viewModelScope.launch {
             container.settings.saveCredentials(WithingsCredentials(clientId, clientSecret, redirectUri))
-            message("Withings-uppgifter sparade")
+            message(text(R.string.msg_credentials_saved))
         }
     }
 
@@ -135,10 +137,10 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
         _login.value = null
         val redirect = WithingsRedirect.parse(url)
         when {
-            redirect == null -> message("Kunde inte läsa adressen från Withings")
-            redirect.error != null -> message("Withings: ${redirect.error}")
-            pendingState != null && redirect.state != pendingState -> message("Svaret hör inte till senaste inloggningen – försök igen")
-            redirect.code == null -> message("Ingen kod i adressen från Withings")
+            redirect == null -> message(text(R.string.msg_redirect_unreadable))
+            redirect.error != null -> message(text(R.string.msg_withings_error, redirect.error))
+            pendingState != null && redirect.state != pendingState -> message(text(R.string.msg_state_mismatch))
+            redirect.code == null -> message(text(R.string.msg_no_code))
             else -> connect(redirect.code)
         }
     }
@@ -149,15 +151,15 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
             container.settings.resetCursors()
             SyncScheduler.cancelPeriodic(app)
             CookieManager.getInstance().removeAllCookies(null)
-            container.syncLog.info("Withings frånkopplat")
-            message("Withings frånkopplat")
+            container.syncLog.info(text(R.string.msg_disconnected))
+            message(text(R.string.msg_disconnected))
         }
     }
 
     private fun newAuthorizeUrl(): String? {
         val credentials = settings.value?.credentials
         if (credentials == null || !credentials.isComplete) {
-            message("Fyll i Client ID, Client Secret och Callback-URL under Inställningar först")
+            message(text(R.string.msg_fill_credentials))
             return null
         }
         val state = UUID.randomUUID().toString()
@@ -175,15 +177,15 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
                 // Logging in again as the same user resumes where the last good sync stopped.
                 if (current.tokens?.userId != tokens.userId) container.settings.resetCursors()
                 pendingState = null
-                container.syncLog.info("Ansluten till Withings (användar-ID ${tokens.userId})")
+                container.syncLog.info(text(R.string.msg_connected_log, tokens.userId))
                 SyncScheduler.schedulePeriodic(app, current.options.intervalHours, replace = true)
                 SyncScheduler.syncNow(app)
-                message("Withings anslutet – första synken har startat")
+                message(text(R.string.msg_connected))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                container.syncLog.error("Withings-inloggningen misslyckades: ${e.message}")
-                message("Inloggningen misslyckades: ${e.message}")
+                container.syncLog.error(text(R.string.msg_login_failed_log, e.message.orEmpty()))
+                message(text(R.string.msg_login_failed, e.message.orEmpty()))
             } finally {
                 _connecting.value = false
             }
@@ -194,7 +196,7 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
 
     fun syncNow() {
         if (settings.value?.withingsConnected != true) {
-            message("Anslut Withings först")
+            message(text(R.string.msg_connect_first))
             return
         }
         SyncScheduler.syncNow(app)
@@ -214,7 +216,7 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
     fun refetchHistory() {
         viewModelScope.launch {
             container.settings.resetCursors()
-            container.syncLog.info("Synkstatus nollställd – hämtar om historiken")
+            container.syncLog.info(text(R.string.msg_history_reset))
             syncNow()
         }
     }
@@ -235,7 +237,7 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
                 throw e
             } catch (e: Exception) {
                 _snapshots.value = emptyList()
-                message("Kunde inte läsa Health Connect: ${e.message}")
+                message(text(R.string.msg_read_failed, e.message.orEmpty()))
             } finally {
                 _dataBusy.value = false
             }
@@ -248,17 +250,19 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
             try {
                 val rows = app.contentResolver.openOutputStream(uri)?.use { out ->
                     container.healthConnect.exportCsv(out, days, _sourceFilter.value)
-                } ?: error("kunde inte öppna filen")
-                message("Exporterade $rows rader")
+                } ?: error(text(R.string.msg_open_file_failed))
+                message(app.resources.getQuantityString(R.plurals.msg_exported, rows, rows))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                message("Exporten misslyckades: ${e.message}")
+                message(text(R.string.msg_export_failed, e.message.orEmpty()))
             } finally {
                 _dataBusy.value = false
             }
         }
     }
+
+    private fun text(@StringRes id: Int, vararg args: Any): String = app.getString(id, *args)
 
     private fun message(text: String) {
         _messages.trySend(text)

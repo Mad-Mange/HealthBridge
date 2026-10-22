@@ -16,7 +16,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import se.healthbridge.app.R
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -77,29 +79,35 @@ fun SupportingText(text: String) {
     Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
-// The UI is Swedish, so month names are too, whatever the phone's language.
 private val timeOnly = DateTimeFormatter.ofPattern("HH:mm")
-private val dateTime = DateTimeFormatter.ofPattern("d MMM HH:mm", Locale.forLanguageTag("sv-SE"))
 
-/** "idag 08:12", "igår 22:40" or "3 okt 07:15". */
+/** "today 08:12", "yesterday 22:40" or "3 Oct 07:15", in the UI's language (not necessarily the phone's). */
+@Composable
 fun formatTime(instant: Instant): String {
     val zone = ZoneId.systemDefault()
     val local = instant.atZone(zone)
     val today = LocalDate.now(zone)
+    val time = timeOnly.format(local)
     return when (local.toLocalDate()) {
-        today -> "idag ${timeOnly.format(local)}"
-        today.minusDays(1) -> "igår ${timeOnly.format(local)}"
-        today.plusDays(1) -> "imorgon ${timeOnly.format(local)}"
-        else -> dateTime.format(local)
+        today -> stringResource(R.string.time_today, time)
+        today.minusDays(1) -> stringResource(R.string.time_yesterday, time)
+        today.plusDays(1) -> stringResource(R.string.time_tomorrow, time)
+        else -> {
+            val locale = Locale.forLanguageTag(stringResource(R.string.date_locale))
+            DateTimeFormatter.ofPattern("d MMM HH:mm", locale).format(local)
+        }
     }
 }
 
+@Composable
 fun intervalText(hours: Int): String = when (hours) {
-    1 -> "varje timme"
-    24 -> "en gång per dygn"
-    else -> "var $hours:e timme"
+    1 -> stringResource(R.string.interval_hourly)
+    24 -> stringResource(R.string.interval_daily)
+    else -> stringResource(R.string.interval_hours, hours)
 }
 
+@Composable
 fun formatEpochSeconds(seconds: Long): String = formatTime(Instant.ofEpochSecond(seconds))
 
+@Composable
 fun formatEpochMillis(millis: Long): String = formatTime(Instant.ofEpochMilli(millis))

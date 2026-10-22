@@ -53,6 +53,11 @@ android {
         compose = true
         buildConfig = true
     }
+
+    // Lists English + Swedish in the system's per-app language setting (Android 13+).
+    androidResources {
+        generateLocaleConfig = true
+    }
 }
 
 dependencies {

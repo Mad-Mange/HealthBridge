@@ -38,8 +38,8 @@ object SyncNotifier {
         }
         val manager = context.getSystemService(NotificationManager::class.java)
         manager.createNotificationChannel(
-            NotificationChannel(CHANNEL_ID, "Synkproblem", NotificationManager.IMPORTANCE_DEFAULT).apply {
-                description = "När synken från Withings har slutat fungera"
+            NotificationChannel(CHANNEL_ID, context.getString(R.string.notif_channel), NotificationManager.IMPORTANCE_DEFAULT).apply {
+                description = context.getString(R.string.notif_channel_description)
             },
         )
         val open = PendingIntent.getActivity(
@@ -48,7 +48,7 @@ object SyncNotifier {
             Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
-        val title = if (result.needsLogin) "Logga in på Withings igen" else "Synken från Withings misslyckades"
+        val title = context.getString(if (result.needsLogin) R.string.notif_title_login else R.string.notif_title_failed)
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)

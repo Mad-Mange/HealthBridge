@@ -1,10 +1,13 @@
 package se.healthbridge.app.sync
 
+import android.content.Context
+import androidx.annotation.StringRes
 import androidx.health.connect.client.records.Record
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import se.healthbridge.app.R
 import se.healthbridge.app.data.AppSettings
 import se.healthbridge.app.data.SettingsRepository
 import se.healthbridge.app.data.SyncLog
@@ -25,6 +28,7 @@ import kotlin.reflect.KClass
  * Runs are serialized, so the periodic worker and "sync now" never overlap.
  */
 class SyncEngine(
+    private val context: Context,
     private val settings: SettingsRepository,
     private val api: WithingsApi,
     private val healthConnect: HealthConnectRepository,
@@ -50,21 +54,21 @@ class SyncEngine(
         } catch (e: CancellationException) {
             throw e
         } catch (e: WithingsAuthException) {
-            Result(Outcome.FAILED, "Withings-inloggningen gäller inte längre – logga in igen (${e.message})", needsLogin = true)
+            Result(Outcome.FAILED, text(R.string.sync_failed_login, e.message.orEmpty()), needsLogin = true)
         } catch (e: WithingsException) {
-            Result(Outcome.RETRY, "Tillfälligt fel, försöker igen senare (${e.message})")
+            Result(Outcome.RETRY, text(R.string.sync_retry_withings, e.message.orEmpty()))
         } catch (e: IOException) {
-            Result(Outcome.RETRY, "Nätverksfel: ${e.message}")
+            Result(Outcome.RETRY, text(R.string.sync_retry_network, e.message.orEmpty()))
         } catch (e: SecurityException) {
-            Result(Outcome.FAILED, "Health Connect nekade åtkomst: ${e.message}")
+            Result(Outcome.FAILED, text(R.string.sync_failed_hc, e.message.orEmpty()))
         } catch (e: Exception) {
-            Result(Outcome.FAILED, "Fel: ${e.message ?: e::class.simpleName}")
+            Result(Outcome.FAILED, text(R.string.sync_failed_other, e.message ?: e::class.simpleName.orEmpty()))
         }
         lastFinishedAtMillis = System.currentTimeMillis()
 
         when (result.outcome) {
             Outcome.SUCCESS -> log.info(result.summary)
-            Outcome.SKIPPED -> log.warn("Synk hoppades över: ${result.summary}")
+            Outcome.SKIPPED -> log.warn(text(R.string.sync_skipped, result.summary))
             Outcome.RETRY, Outcome.FAILED -> log.error(result.summary)
         }
         if (result.outcome != Outcome.SKIPPED) {
@@ -79,11 +83,11 @@ class SyncEngine(
     }
 
     private suspend fun run(current: AppSettings, startedAt: Long): Result {
-        if (!healthConnect.isAvailable()) return skipped("Health Connect är inte tillgängligt")
-        if (!current.credentials.isComplete) return skipped("Withings Client ID/Secret saknas")
-        val tokens = current.tokens ?: return skipped("Withings är inte anslutet")
+        if (!healthConnect.isAvailable()) return skipped(R.string.skip_hc_unavailable)
+        if (!current.credentials.isComplete) return skipped(R.string.skip_no_credentials)
+        val tokens = current.tokens ?: return skipped(R.string.skip_not_connected)
         val options = current.options
-        if (!options.measures && !options.sleep && !options.activity) return skipped("Inga datatyper valda")
+        if (!options.measures && !options.sleep && !options.activity) return skipped(R.string.skip_nothing_selected)
 
         val session = Session(current.credentials, tokens)
         val backfillStart = startedAt - options.backfillDays * SECONDS_PER_DAY
@@ -129,19 +133,20 @@ class SyncEngine(
         settings.saveCursors(measuresCursor, sleepCursor, activityCursor)
 
         if (tally.denied.isNotEmpty()) {
-            log.warn(
-                "Saknar skrivbehörighet i Health Connect för: " +
-                    tally.denied.joinToString { HealthConnectRepository.label(it) } +
-                    ". Ge behörighet och välj \"Hämta om historik\" i Inställningar.",
-            )
+            log.warn(text(R.string.sync_denied_warning, labels(tally.denied)))
         }
         if (tally.skipped > 0) {
-            log.warn("${tally.skipped} värden hoppades över (utanför Health Connects tillåtna intervall).")
+            log.warn(context.resources.getQuantityString(R.plurals.sync_values_skipped, tally.skipped, tally.skipped))
         }
         return Result(Outcome.SUCCESS, tally.summary())
     }
 
-    private fun skipped(reason: String) = Result(Outcome.SKIPPED, reason)
+    private fun skipped(@StringRes reason: Int) = Result(Outcome.SKIPPED, text(reason))
+
+    private fun text(@StringRes id: Int, vararg args: Any): String = context.getString(id, *args)
+
+    private fun labels(types: Collection<KClass<out Record>>): String =
+        types.joinToString { HealthConnectRepository.label(context, it) }
 
     /** Holds the current tokens and refreshes them before expiry or after an auth error. */
     private inner class Session(private val credentials: WithingsCredentials, private var tokens: WithingsTokens) {
@@ -169,7 +174,7 @@ class SyncEngine(
         }
     }
 
-    private class Tally {
+    private inner class Tally {
         val written = linkedMapOf<KClass<out Record>, Int>()
         val denied = linkedSetOf<KClass<out Record>>()
         var skipped = 0
@@ -184,13 +189,14 @@ class SyncEngine(
 
         fun summary(): String {
             val total = written.values.sum()
-            val text = if (total == 0) {
-                "Inget nytt från Withings"
+            val summary = if (total == 0) {
+                text(R.string.sync_nothing_new)
             } else {
-                "Skrev $total poster: " + written.entries.joinToString { (type, n) -> "${HealthConnectRepository.label(type)} $n" }
+                val parts = written.entries.joinToString { (type, n) -> "${HealthConnectRepository.label(context, type)} $n" }
+                context.resources.getQuantityString(R.plurals.sync_wrote, total, total, parts)
             }
-            if (denied.isEmpty()) return text
-            return "$text (saknar behörighet för ${denied.joinToString { HealthConnectRepository.label(it) }})"
+            if (denied.isEmpty()) return summary
+            return text(R.string.sync_no_permission_for, summary, labels(denied))
         }
     }
 

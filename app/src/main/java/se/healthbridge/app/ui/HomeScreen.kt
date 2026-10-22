@@ -29,9 +29,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.health.connect.client.HealthConnectClient
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import se.healthbridge.app.R
 
 @Composable
 fun HomeScreen(
@@ -54,7 +56,7 @@ fun HomeScreen(
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        ScreenTitle("HealthBridge", "Withings → Health Connect → Samsung Health")
+        ScreenTitle(stringResource(R.string.app_name), stringResource(R.string.home_subtitle))
 
         // Health Connect
         val hcStatus = when {
@@ -64,21 +66,21 @@ fun HomeScreen(
         }
         StatusCard("Health Connect", Icons.Filled.Favorite, hcStatus) {
             when {
-                !hc.checked -> Text("Kontrollerar…")
+                !hc.checked -> Text(stringResource(R.string.hc_checking))
                 !hc.available -> {
                     val update = hc.sdkStatus == HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED
-                    Text(if (update) "Health Connect behöver uppdateras." else "Health Connect finns inte på den här enheten.")
+                    Text(stringResource(if (update) R.string.hc_update_required else R.string.hc_missing))
                     if (update) {
                         Button(onClick = {
                             val uri = "market://details?id=com.google.android.apps.healthdata&url=healthconnect%3A%2F%2Fonboarding".toUri()
                             runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
-                        }) { Text("Uppdatera i Play Butik") }
+                        }) { Text(stringResource(R.string.hc_update_button)) }
                     }
                 }
-                hc.allGranted -> Text("Alla ${hc.requiredCount} behörigheter är beviljade.")
+                hc.allGranted -> Text(stringResource(R.string.hc_all_granted, hc.requiredCount))
                 else -> {
-                    Text("${hc.grantedCount} av ${hc.requiredCount} behörigheter beviljade. Appen behöver skriva Withings-data och läsa data för översikten.")
-                    Button(onClick = onRequestPermissions) { Text("Ge behörigheter") }
+                    Text(stringResource(R.string.hc_some_granted, hc.grantedCount, hc.requiredCount))
+                    Button(onClick = onRequestPermissions) { Text(stringResource(R.string.hc_grant_button)) }
                 }
             }
         }
@@ -92,23 +94,23 @@ fun HomeScreen(
         }
         StatusCard("Withings", Icons.Filled.AccountCircle, withingsStatus) {
             when {
-                current == null -> Text("Laddar…")
+                current == null -> Text(stringResource(R.string.loading))
                 connecting -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                    Text("Ansluter…")
+                    Text(stringResource(R.string.withings_connecting))
                 }
                 current.withingsConnected && current.state.needsLogin -> {
-                    Text("Withings godtar inte längre inloggningen, så synken står still. Logga in igen så fortsätter den där den slutade.")
-                    Button(onClick = { vm.startWithingsLogin() }) { Text("Logga in igen") }
+                    Text(stringResource(R.string.withings_needs_login))
+                    Button(onClick = { vm.startWithingsLogin() }) { Text(stringResource(R.string.withings_log_in_again)) }
                 }
-                current.withingsConnected -> Text("Ansluten (användar-ID ${current.tokens?.userId.orEmpty()}).")
+                current.withingsConnected -> Text(stringResource(R.string.withings_connected, current.tokens?.userId.orEmpty()))
                 !current.credentials.isComplete -> {
-                    Text("Skapa en app på developer.withings.com och fyll i Client ID, Client Secret och Callback-URL.")
-                    Button(onClick = onOpenSettings) { Text("Till inställningar") }
+                    Text(stringResource(R.string.withings_setup_needed))
+                    Button(onClick = onOpenSettings) { Text(stringResource(R.string.go_to_settings)) }
                 }
                 else -> {
-                    Text("Inte ansluten.")
-                    Button(onClick = { vm.startWithingsLogin() }) { Text("Logga in på Withings") }
+                    Text(stringResource(R.string.withings_not_connected))
+                    Button(onClick = { vm.startWithingsLogin() }) { Text(stringResource(R.string.withings_log_in)) }
                 }
             }
         }
@@ -120,17 +122,22 @@ fun HomeScreen(
             state.lastRunOk -> Status.OK
             else -> Status.WARNING
         }
-        StatusCard("Synkronisering", Icons.Filled.Refresh, syncStatus) {
+        StatusCard(stringResource(R.string.sync_title), Icons.Filled.Refresh, syncStatus) {
             if (state?.lastRunAt != null) {
-                Text("Senast ${formatEpochSeconds(state.lastRunAt)}", style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(R.string.sync_last, formatEpochSeconds(state.lastRunAt)), style = MaterialTheme.typography.labelLarge)
                 state.lastRunSummary?.let { Text(it) }
             } else {
-                Text("Ingen synk har körts än.")
+                Text(stringResource(R.string.sync_never))
             }
             if (current?.withingsConnected == true) {
+                val interval = intervalText(current.options.intervalHours)
+                val next = nextRun
                 SupportingText(
-                    "Automatiskt ${intervalText(current.options.intervalHours)}" +
-                        (nextRun?.let { " · nästa ${formatEpochMillis(it)}" } ?: ""),
+                    if (next != null) {
+                        stringResource(R.string.sync_automatic_next, interval, formatEpochMillis(next))
+                    } else {
+                        stringResource(R.string.sync_automatic, interval)
+                    },
                 )
             }
             FilledTonalButton(
@@ -139,20 +146,17 @@ fun HomeScreen(
             ) {
                 if (running) {
                     CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
-                    Text("  Synkar…")
+                    Text("  " + stringResource(R.string.sync_running))
                 } else {
                     Icon(Icons.Filled.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Text("  Synka nu")
+                    Text("  " + stringResource(R.string.sync_now))
                 }
             }
         }
 
         if (current?.withingsConnected == true && !batteryUnrestricted) {
-            StatusCard("Bakgrundskörning", Icons.Filled.Warning, Status.WARNING) {
-                Text(
-                    "Samsung söver appar som körs i bakgrunden för att spara batteri, och då stannar synken. " +
-                        "Tillåt HealthBridge att alltid köras i bakgrunden (obegränsad batterianvändning).",
-                )
+            StatusCard(stringResource(R.string.battery_title), Icons.Filled.Warning, Status.WARNING) {
+                Text(stringResource(R.string.battery_text))
                 Button(onClick = {
                     val ask = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, "package:${context.packageName}".toUri())
                     try {
@@ -160,22 +164,19 @@ fun HomeScreen(
                     } catch (_: ActivityNotFoundException) {
                         runCatching { context.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) }
                     }
-                }) { Text("Tillåt") }
+                }) { Text(stringResource(R.string.battery_allow)) }
             }
         }
 
         StatusCard("Samsung Health", Icons.Filled.Info, Status.NEUTRAL) {
-            Text(
-                "Samsung Health läser Withings-värdena via Health Connect. Öppna Samsung Health → " +
-                    "Inställningar → Health Connect och se till att vikt, blodtryck, sömn m.m. får läsas.",
-            )
+            Text(stringResource(R.string.samsung_text))
             Button(onClick = {
                 val intent = context.packageManager.getLaunchIntentForPackage("com.sec.android.app.shealth")
                 try {
                     if (intent != null) context.startActivity(intent)
                 } catch (_: ActivityNotFoundException) {
                 }
-            }) { Text("Öppna Samsung Health") }
+            }) { Text(stringResource(R.string.samsung_open)) }
         }
     }
 }

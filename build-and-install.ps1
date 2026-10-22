@@ -1,5 +1,5 @@
-# Bygger HealthBridge och installerar den på en ansluten telefon (USB- eller trådlös felsökning).
-# Kör:  powershell -ExecutionPolicy Bypass -File .\build-and-install.ps1
+# Builds HealthBridge and installs it on a connected phone (USB or wireless debugging).
+# Run:  powershell -ExecutionPolicy Bypass -File .\build-and-install.ps1
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
 
@@ -15,7 +15,7 @@ $apk = Join-Path $PSScriptRoot 'app\build\outputs\apk\debug\app-debug.apk'
 $devices = & $adb devices | Select-String "`tdevice$"
 if (-not $devices) {
     Write-Host ""
-    Write-Host "Ingen telefon hittades via adb. APK-filen finns här:"
+    Write-Host "No phone found via adb. The APK is here:"
     Write-Host "  $apk"
     exit 0
 }
@@ -23,4 +23,4 @@ if (-not $devices) {
 & $adb install -r $apk
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 & $adb shell monkey -p se.healthbridge.app -c android.intent.category.LAUNCHER 1 | Out-Null
-Write-Host "HealthBridge installerad och startad."
+Write-Host "HealthBridge installed and started."

@@ -1,4 +1,206 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- English is the default; Swedish lives in values-sv. Brand names and units are not translated. -->
 <resources>
-    <string name="app_name">HealthBridge</string>
+    <string name="app_name" translatable="false">HealthBridge</string>
+
+    <!-- Formatting. date_locale picks month names that match the UI language, not the phone's. -->
+    <string name="date_locale">en</string>
+    <string name="time_today">today %1$s</string>
+    <string name="time_yesterday">yesterday %1$s</string>
+    <string name="time_tomorrow">tomorrow %1$s</string>
+    <string name="interval_hourly">every hour</string>
+    <string name="interval_daily">once a day</string>
+    <string name="interval_hours">every %1$d hours</string>
+    <string name="duration_hours_minutes" translatable="false">%1$d h %2$d min</string>
+
+    <!-- Navigation -->
+    <string name="tab_home">Home</string>
+    <string name="tab_data">Data</string>
+    <string name="tab_log">Log</string>
+    <string name="tab_settings">Settings</string>
+
+    <!-- Home -->
+    <string name="home_subtitle" translatable="false">Withings → Health Connect → Samsung Health</string>
+    <string name="loading">Loading…</string>
+    <string name="hc_checking">Checking…</string>
+    <string name="hc_update_required">Health Connect needs to be updated.</string>
+    <string name="hc_missing">Health Connect isn\'t available on this device.</string>
+    <string name="hc_update_button">Update in Play Store</string>
+    <string name="hc_all_granted">All %1$d permissions granted.</string>
+    <string name="hc_some_granted">%1$d of %2$d permissions granted. The app needs to write Withings data and read data for the overview.</string>
+    <string name="hc_grant_button">Grant permissions</string>
+    <string name="withings_connecting">Connecting…</string>
+    <string name="withings_needs_login">Withings no longer accepts the login, so syncing has stopped. Log in again and it picks up where it left off.</string>
+    <string name="withings_log_in_again">Log in again</string>
+    <string name="withings_connected">Connected (user ID %1$s).</string>
+    <string name="withings_setup_needed">Create an app at developer.withings.com and enter its Client ID, Client Secret and callback URL.</string>
+    <string name="go_to_settings">Go to settings</string>
+    <string name="withings_not_connected">Not connected.</string>
+    <string name="withings_log_in">Log in to Withings</string>
+    <string name="sync_title">Sync</string>
+    <string name="sync_last">Last run %1$s</string>
+    <string name="sync_never">No sync has run yet.</string>
+    <string name="sync_automatic">Runs automatically %1$s</string>
+    <string name="sync_automatic_next">Runs automatically %1$s · next %2$s</string>
+    <string name="sync_running">Syncing…</string>
+    <string name="sync_now">Sync now</string>
+    <string name="battery_title">Background sync</string>
+    <string name="battery_text">Samsung puts apps that run in the background to sleep to save battery, and then syncing stops. Let HealthBridge always run in the background (unrestricted battery use).</string>
+    <string name="battery_allow">Allow</string>
+    <string name="samsung_text">Samsung Health reads the Withings values through Health Connect. Open Samsung Health → Settings → Health Connect and make sure it may read weight, blood pressure, sleep and so on.</string>
+    <string name="samsung_open">Open Samsung Health</string>
+
+    <!-- Data -->
+    <string name="data_title">Data</string>
+    <string name="data_subtitle">Latest values in Health Connect (30 days)</string>
+    <string name="source_all">All sources</string>
+    <string name="source_samsung" translatable="false">Samsung Health</string>
+    <string name="source_withings" translatable="false">Withings</string>
+    <string name="data_refresh">Refresh</string>
+    <string name="data_export">Export CSV</string>
+    <string name="data_hc_unavailable">Health Connect isn\'t available.</string>
+    <string name="data_no_permissions">Grant Health Connect permissions on the home screen to see data.</string>
+    <string name="data_no_samsung">No data from Samsung Health found. Check that Samsung Health syncs to Health Connect (Samsung Health → Settings → Health Connect).</string>
+    <string name="data_empty">No data from the last 30 days.</string>
+    <string name="data_export_note">The CSV export contains every readable type from the last %1$d days for the selected source.</string>
+    <string name="metric_steps_today">Steps today</string>
+    <string name="metric_sleep">Sleep</string>
+    <string name="metric_weight">Weight</string>
+    <string name="metric_body_fat">Body fat</string>
+    <string name="metric_blood_pressure">Blood pressure</string>
+    <string name="metric_heart_rate">Heart rate</string>
+    <string name="metric_resting_heart_rate">Resting heart rate</string>
+    <string name="metric_spo2">Oxygen saturation</string>
+    <string name="metric_exercise">Exercise</string>
+    <string name="metric_body_temperature">Body temperature</string>
+    <string name="metric_vo2max" translatable="false">VO₂ max</string>
+    <string name="exercise_default_title">Workout</string>
+    <string name="source_name_self" translatable="false">HealthBridge (Withings)</string>
+    <string name="source_name_withings_app">Withings app</string>
+
+    <!-- Record types in sync summaries -->
+    <string name="type_weight">weight</string>
+    <string name="type_height">height</string>
+    <string name="type_body_fat">body fat</string>
+    <string name="type_lean_mass">lean mass</string>
+    <string name="type_bone_mass">bone mass</string>
+    <string name="type_body_water">body water</string>
+    <string name="type_bmr" translatable="false">BMR</string>
+    <string name="type_blood_pressure">blood pressure</string>
+    <string name="type_heart_rate">heart rate</string>
+    <string name="type_spo2" translatable="false">SpO₂</string>
+    <string name="type_temperature">temperature</string>
+    <string name="type_vo2max" translatable="false">VO₂ max</string>
+    <string name="type_steps">steps</string>
+    <string name="type_distance">distance</string>
+    <string name="type_active_kcal">active kcal</string>
+    <string name="type_total_kcal">total kcal</string>
+    <string name="type_sleep">sleep</string>
+
+    <!-- Sync results (shown on the home screen, in the log and in notifications) -->
+    <string name="sync_failed_login">The Withings login is no longer valid, log in again (%1$s)</string>
+    <string name="sync_retry_withings">Temporary error, will retry later (%1$s)</string>
+    <string name="sync_retry_network">Network error: %1$s</string>
+    <string name="sync_failed_hc">Health Connect denied access: %1$s</string>
+    <string name="sync_failed_other">Error: %1$s</string>
+    <string name="sync_skipped">Sync skipped: %1$s</string>
+    <string name="skip_hc_unavailable">Health Connect isn\'t available</string>
+    <string name="skip_no_credentials">Withings Client ID/Secret missing</string>
+    <string name="skip_not_connected">Withings isn\'t connected</string>
+    <string name="skip_nothing_selected">No data types selected</string>
+    <string name="sync_nothing_new">Nothing new from Withings</string>
+    <plurals name="sync_wrote">
+        <item quantity="one">Wrote %1$d record: %2$s</item>
+        <item quantity="other">Wrote %1$d records: %2$s</item>
+    </plurals>
+    <string name="sync_no_permission_for">%1$s (no permission for %2$s)</string>
+    <string name="sync_denied_warning">Missing write permission in Health Connect for: %1$s. Grant it and choose \"Refetch history\" in Settings.</string>
+    <plurals name="sync_values_skipped">
+        <item quantity="one">%d value was skipped (outside the range Health Connect allows).</item>
+        <item quantity="other">%d values were skipped (outside the range Health Connect allows).</item>
+    </plurals>
+
+    <!-- Notification -->
+    <string name="notif_channel">Sync problems</string>
+    <string name="notif_channel_description">When syncing from Withings has stopped working</string>
+    <string name="notif_title_login">Log in to Withings again</string>
+    <string name="notif_title_failed">Syncing from Withings failed</string>
+
+    <!-- Snackbar and log messages -->
+    <string name="msg_no_permissions">No permissions were granted</string>
+    <string name="msg_credentials_saved">Withings details saved</string>
+    <string name="msg_redirect_unreadable">Couldn\'t read the address from Withings</string>
+    <string name="msg_withings_error" translatable="false">Withings: %1$s</string>
+    <string name="msg_state_mismatch">The response doesn\'t belong to the latest login, try again</string>
+    <string name="msg_no_code">No code in the address from Withings</string>
+    <string name="msg_disconnected">Withings disconnected</string>
+    <string name="msg_fill_credentials">Enter Client ID, Client Secret and callback URL under Settings first</string>
+    <string name="msg_connected_log">Connected to Withings (user ID %1$s)</string>
+    <string name="msg_connected">Withings connected, the first sync has started</string>
+    <string name="msg_login_failed_log">Withings login failed: %1$s</string>
+    <string name="msg_login_failed">Login failed: %1$s</string>
+    <string name="msg_connect_first">Connect Withings first</string>
+    <string name="msg_history_reset">Sync state reset, refetching history</string>
+    <string name="msg_read_failed">Couldn\'t read Health Connect: %1$s</string>
+    <string name="msg_open_file_failed">couldn\'t open the file</string>
+    <plurals name="msg_exported">
+        <item quantity="one">Exported %d row</item>
+        <item quantity="other">Exported %d rows</item>
+    </plurals>
+    <string name="msg_export_failed">Export failed: %1$s</string>
+
+    <!-- Log -->
+    <string name="log_title">Log</string>
+    <string name="log_subtitle">What the sync has done</string>
+    <string name="log_clear">Clear</string>
+    <string name="log_empty">No events yet.</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_withings_app">Withings developer app</string>
+    <string name="settings_withings_help">Create an app (Public API) at developer.withings.com and enter the same callback URL there as here. https://example.com/ works fine, because HealthBridge catches the redirect before the page loads.</string>
+    <string name="client_id" translatable="false">Client ID</string>
+    <string name="client_secret" translatable="false">Client Secret</string>
+    <string name="callback_url">Callback URL</string>
+    <string name="show">Show</string>
+    <string name="hide">Hide</string>
+    <string name="save">Save</string>
+    <string name="open_withings_developer">Open Withings Developer</string>
+    <string name="settings_connection">Connection</string>
+    <string name="settings_connected_as">Connected as user ID %1$s</string>
+    <string name="disconnect_withings">Disconnect Withings</string>
+    <string name="ext_login_show">Login not working? Log in through the browser</string>
+    <string name="ext_login_hide">Hide alternative login</string>
+    <string name="ext_login_steps">1. Tap \"Open browser\" and log in. 2. When you land on the callback page (it may show an error), copy the whole address. 3. Paste it here and tap \"Finish\" within 30 seconds.</string>
+    <string name="ext_open_browser">Open browser</string>
+    <string name="ext_paste_label">Address with ?code=…</string>
+    <string name="ext_finish">Finish</string>
+    <string name="settings_what">What to sync to Health Connect</string>
+    <string name="opt_measures">Measurements</string>
+    <string name="opt_measures_desc">Weight, body fat, lean mass, bone mass, water, BMR, blood pressure, heart rate, SpO₂, temperature, VO₂ max</string>
+    <string name="opt_sleep">Sleep</string>
+    <string name="opt_sleep_desc">Sleep sessions with stages (Sleep Analyzer / watch)</string>
+    <string name="opt_activity">Activity</string>
+    <string name="opt_activity_desc">Steps, distance and calories from a Withings watch. Leave this off if your phone or Galaxy Watch already counts steps, or they\'re counted twice.</string>
+    <string name="settings_how_often">How often</string>
+    <string name="interval_chip_hours">%1$d h</string>
+    <string name="interval_chip_day">1 day</string>
+    <string name="settings_battery_note">Android may postpone background jobs to save battery.</string>
+    <string name="settings_history">History to fetch</string>
+    <string name="days_chip">%1$d days</string>
+    <string name="settings_history_note">Applies to the first sync and \"Refetch history\". Values that were already synced aren\'t duplicated.</string>
+    <string name="refetch_history">Refetch history</string>
+    <string name="hc_permissions">Permissions</string>
+    <string name="hc_manage_data">Manage data</string>
+    <string name="version_label" translatable="false">HealthBridge %1$s</string>
+
+    <!-- Withings login -->
+    <string name="cancel">Cancel</string>
+
+    <!-- Privacy policy (shown from Health Connect) -->
+    <string name="privacy_title">Privacy in HealthBridge</string>
+    <string name="privacy_what">HealthBridge fetches your measurements (weight, body composition, blood pressure, heart rate, sleep and activity) from your Withings account and writes them to Health Connect on this phone, so that Samsung Health and other apps can see them.</string>
+    <string name="privacy_read">The app reads data from Health Connect (for example from Samsung Health) only to show the overview and for an export to a CSV file that you choose to save yourself.</string>
+    <string name="privacy_where">No health data is sent to any server other than Withings\' own API. Login keys are stored encrypted on the phone and can be removed at any time with \"Disconnect Withings\".</string>
+    <string name="close">Close</string>
 </resources>

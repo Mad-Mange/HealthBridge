@@ -28,6 +28,7 @@ import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import se.healthbridge.app.R
 import se.healthbridge.app.data.SettingsRepository
 import se.healthbridge.app.data.SyncLog
 import se.healthbridge.app.data.SyncOptions
@@ -94,7 +95,7 @@ class SyncEngineInstrumentedTest {
     @Test
     fun syncWritesWithingsDataOnceAndUpdatesInPlace() = runBlocking {
         val api = WithingsApi(OkHttpClient(), server.url("/").toString().trimEnd('/'))
-        val engine = SyncEngine(settings, api, healthConnect, SyncLog(context))
+        val engine = SyncEngine(context, settings, api, healthConnect, SyncLog(context))
 
         val first = engine.sync()
         assertEquals(first.summary, SyncEngine.Outcome.SUCCESS, first.outcome)
@@ -103,7 +104,9 @@ class SyncEngineInstrumentedTest {
         assertEquals("access-2", tokens.accessToken)
         assertEquals("rotated refresh token must be stored", "refresh-2", tokens.refreshToken)
         assertNotNull(settings.current().state.measuresCursor)
-        assertTrue(first.summary, first.summary.contains("vikt 1") && first.summary.contains("sömn 1"))
+        val weight = context.getString(R.string.type_weight)
+        val sleepLabel = context.getString(R.string.type_sleep)
+        assertTrue(first.summary, first.summary.contains("$weight 1") && first.summary.contains("$sleepLabel 1"))
 
         // Re-fetch everything with a corrected weight: same records must be updated, not duplicated.
         weightGrams = 79_900
@@ -127,8 +130,10 @@ class SyncEngineInstrumentedTest {
 
         // The data screen and CSV export see the same data.
         val snapshots = healthConnect.latestSnapshots(SourceFilter.WITHINGS)
-        assertTrue(snapshots.toString(), snapshots.any { it.title == "Vikt" && it.value == "79.9 kg" })
-        assertTrue(snapshots.toString(), snapshots.any { it.title == "Blodtryck" && it.value == "124/81 mmHg" })
+        val weightTitle = context.getString(R.string.metric_weight)
+        val bpTitle = context.getString(R.string.metric_blood_pressure)
+        assertTrue(snapshots.toString(), snapshots.any { it.title == weightTitle && it.value == "79.9 kg" })
+        assertTrue(snapshots.toString(), snapshots.any { it.title == bpTitle && it.value == "124/81 mmHg" })
         val csv = ByteArrayOutputStream()
         healthConnect.exportCsv(csv, days = 1, filter = SourceFilter.WITHINGS)
         assertTrue(csv.toString().contains("weight,"))
@@ -138,7 +143,7 @@ class SyncEngineInstrumentedTest {
     fun rejectedRefreshTokenAsksForNewLogin() = runBlocking {
         settings.saveTokens(WithingsTokens("expired-access", "revoked", expiresAt = now - 10, userId = "42"))
         val api = WithingsApi(OkHttpClient(), server.url("/").toString().trimEnd('/'))
-        val result = SyncEngine(settings, api, healthConnect, SyncLog(context)).sync()
+        val result = SyncEngine(context, settings, api, healthConnect, SyncLog(context)).sync()
 
         // The fake answers an unknown refresh token like Withings does: status 503 "Invalid Params".
         assertEquals(result.summary, SyncEngine.Outcome.FAILED, result.outcome)

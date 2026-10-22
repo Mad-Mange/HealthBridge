@@ -2,6 +2,7 @@ package se.healthbridge.app.healthconnect
 
 import android.content.Context
 import android.content.Intent
+import androidx.annotation.StringRes
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
@@ -30,6 +31,7 @@ import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import se.healthbridge.app.R
 import java.io.OutputStream
 import java.time.Duration
 import java.time.Instant
@@ -41,10 +43,10 @@ import kotlin.reflect.KClass
 /** A "latest value" card on the data screen. */
 data class MetricSnapshot(val title: String, val value: String, val time: Instant, val sources: List<String>)
 
-enum class SourceFilter(val label: String) {
-    ALL("Alla källor"),
-    SAMSUNG("Samsung Health"),
-    WITHINGS("Withings"),
+enum class SourceFilter(@StringRes val label: Int) {
+    ALL(R.string.source_all),
+    SAMSUNG(R.string.source_samsung),
+    WITHINGS(R.string.source_withings),
 }
 
 class HealthConnectRepository(private val context: Context) {
@@ -103,45 +105,46 @@ class HealthConnectRepository(private val context: Context) {
                 if (steps != null) {
                     val km = result[DistanceRecord.DISTANCE_TOTAL]?.inKilometers
                     val value = if (km != null) "$steps  ·  ${fmt(km, 1)} km" else "$steps"
-                    out += MetricSnapshot("Steg idag", value, now, result.dataOrigins.map { it.packageName })
+                    out += MetricSnapshot(text(R.string.metric_steps_today), value, now, result.dataOrigins.map { it.packageName })
                 }
             }
         }
         latest(SleepSessionRecord::class)?.let {
             val d = Duration.between(it.startTime, it.endTime)
-            out += MetricSnapshot("Sömn", "${d.toHours()} h ${d.toMinutes() % 60} min", it.endTime, it.source())
+            val value = text(R.string.duration_hours_minutes, d.toHours(), d.toMinutes() % 60)
+            out += MetricSnapshot(text(R.string.metric_sleep), value, it.endTime, it.source())
         }
         latest(WeightRecord::class)?.let {
-            out += MetricSnapshot("Vikt", "${fmt(it.weight.inKilograms, 1)} kg", it.time, it.source())
+            out += MetricSnapshot(text(R.string.metric_weight), "${fmt(it.weight.inKilograms, 1)} kg", it.time, it.source())
         }
         latest(BodyFatRecord::class)?.let {
-            out += MetricSnapshot("Fettprocent", "${fmt(it.percentage.value, 1)} %", it.time, it.source())
+            out += MetricSnapshot(text(R.string.metric_body_fat), "${fmt(it.percentage.value, 1)} %", it.time, it.source())
         }
         latest(BloodPressureRecord::class)?.let {
             val value = "${it.systolic.inMillimetersOfMercury.toInt()}/${it.diastolic.inMillimetersOfMercury.toInt()} mmHg"
-            out += MetricSnapshot("Blodtryck", value, it.time, it.source())
+            out += MetricSnapshot(text(R.string.metric_blood_pressure), value, it.time, it.source())
         }
         latest(HeartRateRecord::class)?.let { rec ->
             rec.samples.maxByOrNull { it.time }?.let {
-                out += MetricSnapshot("Puls", "${it.beatsPerMinute} bpm", it.time, rec.source())
+                out += MetricSnapshot(text(R.string.metric_heart_rate), "${it.beatsPerMinute} bpm", it.time, rec.source())
             }
         }
         latest(RestingHeartRateRecord::class)?.let {
-            out += MetricSnapshot("Vilopuls", "${it.beatsPerMinute} bpm", it.time, it.source())
+            out += MetricSnapshot(text(R.string.metric_resting_heart_rate), "${it.beatsPerMinute} bpm", it.time, it.source())
         }
         latest(OxygenSaturationRecord::class)?.let {
-            out += MetricSnapshot("Syremättnad", "${fmt(it.percentage.value, 0)} %", it.time, it.source())
+            out += MetricSnapshot(text(R.string.metric_spo2), "${fmt(it.percentage.value, 0)} %", it.time, it.source())
         }
         latest(ExerciseSessionRecord::class)?.let {
             val d = Duration.between(it.startTime, it.endTime)
-            val title = it.title?.takeIf { t -> t.isNotBlank() } ?: "Pass"
-            out += MetricSnapshot("Träning", "$title · ${d.toMinutes()} min", it.endTime, it.source())
+            val title = it.title?.takeIf { t -> t.isNotBlank() } ?: text(R.string.exercise_default_title)
+            out += MetricSnapshot(text(R.string.metric_exercise), "$title · ${d.toMinutes()} min", it.endTime, it.source())
         }
         latest(BodyTemperatureRecord::class)?.let {
-            out += MetricSnapshot("Kroppstemperatur", "${fmt(it.temperature.inCelsius, 1)} °C", it.time, it.source())
+            out += MetricSnapshot(text(R.string.metric_body_temperature), "${fmt(it.temperature.inCelsius, 1)} °C", it.time, it.source())
         }
         latest(Vo2MaxRecord::class)?.let {
-            out += MetricSnapshot("VO₂ max", "${fmt(it.vo2MillilitersPerMinuteKilogram, 1)} ml/kg/min", it.time, it.source())
+            out += MetricSnapshot(text(R.string.metric_vo2max), "${fmt(it.vo2MillilitersPerMinuteKilogram, 1)} ml/kg/min", it.time, it.source())
         }
         return out
     }
@@ -176,6 +179,8 @@ class HealthConnectRepository(private val context: Context) {
         }
         return rows
     }
+
+    private fun text(@StringRes id: Int, vararg args: Any): String = context.getString(id, *args)
 
     private fun originsFor(filter: SourceFilter): Set<DataOrigin> = when (filter) {
         SourceFilter.ALL -> emptySet()
@@ -244,35 +249,35 @@ class HealthConnectRepository(private val context: Context) {
             WRITE_TYPES.map { HealthPermission.getWritePermission(it) }.toSet() +
                 READ_TYPES.map { HealthPermission.getReadPermission(it) }
 
-        fun sourceName(packageName: String, ownPackage: String): String = when (packageName) {
-            SAMSUNG_HEALTH_PACKAGE -> "Samsung Health"
-            ownPackage -> "HealthBridge (Withings)"
-            WITHINGS_PACKAGE -> "Withings-appen"
+        fun sourceName(context: Context, packageName: String): String = when (packageName) {
+            SAMSUNG_HEALTH_PACKAGE -> context.getString(R.string.source_samsung)
+            context.packageName -> context.getString(R.string.source_name_self)
+            WITHINGS_PACKAGE -> context.getString(R.string.source_name_withings_app)
             "nl.appyhapps.healthsync" -> "Health Sync"
             "com.google.android.apps.fitness" -> "Google Fit"
             "com.google.android.apps.healthdata", "com.android.healthconnect.controller" -> "Health Connect"
             else -> packageName
         }
 
-        /** Short Swedish label for a record type, used in sync summaries. */
-        fun label(type: KClass<out Record>): String = when (type) {
-            WeightRecord::class -> "vikt"
-            HeightRecord::class -> "längd"
-            BodyFatRecord::class -> "fett%"
-            LeanBodyMassRecord::class -> "fettfri massa"
-            BoneMassRecord::class -> "benmassa"
-            BodyWaterMassRecord::class -> "vatten"
-            BasalMetabolicRateRecord::class -> "BMR"
-            BloodPressureRecord::class -> "blodtryck"
-            HeartRateRecord::class -> "puls"
-            OxygenSaturationRecord::class -> "SpO₂"
-            BodyTemperatureRecord::class -> "temperatur"
-            Vo2MaxRecord::class -> "VO₂ max"
-            StepsRecord::class -> "steg"
-            DistanceRecord::class -> "distans"
-            ActiveCaloriesBurnedRecord::class -> "aktiva kcal"
-            TotalCaloriesBurnedRecord::class -> "totala kcal"
-            SleepSessionRecord::class -> "sömn"
+        /** Short lower-case label for a record type, used in sync summaries ("weight 3, sleep 1"). */
+        fun label(context: Context, type: KClass<out Record>): String = when (type) {
+            WeightRecord::class -> context.getString(R.string.type_weight)
+            HeightRecord::class -> context.getString(R.string.type_height)
+            BodyFatRecord::class -> context.getString(R.string.type_body_fat)
+            LeanBodyMassRecord::class -> context.getString(R.string.type_lean_mass)
+            BoneMassRecord::class -> context.getString(R.string.type_bone_mass)
+            BodyWaterMassRecord::class -> context.getString(R.string.type_body_water)
+            BasalMetabolicRateRecord::class -> context.getString(R.string.type_bmr)
+            BloodPressureRecord::class -> context.getString(R.string.type_blood_pressure)
+            HeartRateRecord::class -> context.getString(R.string.type_heart_rate)
+            OxygenSaturationRecord::class -> context.getString(R.string.type_spo2)
+            BodyTemperatureRecord::class -> context.getString(R.string.type_temperature)
+            Vo2MaxRecord::class -> context.getString(R.string.type_vo2max)
+            StepsRecord::class -> context.getString(R.string.type_steps)
+            DistanceRecord::class -> context.getString(R.string.type_distance)
+            ActiveCaloriesBurnedRecord::class -> context.getString(R.string.type_active_kcal)
+            TotalCaloriesBurnedRecord::class -> context.getString(R.string.type_total_kcal)
+            SleepSessionRecord::class -> context.getString(R.string.type_sleep)
             else -> type.simpleName.orEmpty()
         }
 

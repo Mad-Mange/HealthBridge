@@ -1,72 +1,72 @@
 # HealthBridge
 
-**En egen Android-app som för över din Withings-data till Samsung Health via Health Connect.**
-Ett hobbyprojekt som ersätter Health Sync för flödet *Withings → Samsung Health* på en
-Samsung Galaxy S24 Ultra, men den fungerar på alla telefoner med Android 9 eller senare och Health Connect.
+**A small Android app that moves your Withings data into Samsung Health through Health Connect.**
+It's a hobby project that replaces Health Sync for the *Withings → Samsung Health* flow on a
+Samsung Galaxy S24 Ultra, but it works on any phone with Android 9 or later and Health Connect.
 
 <p align="center">
-  <img src="docs/screenshots/home.png" width="200" alt="Hemskärmen: Health Connect, Withings och senaste synken">
-  <img src="docs/screenshots/data.png" width="200" alt="Data: senaste värdena per källa">
-  <img src="docs/screenshots/log.png" width="200" alt="Logg över synkkörningar">
-  <img src="docs/screenshots/settings.png" width="200" alt="Inställningar för Withings-appen och synken">
+  <img src="docs/screenshots/home.png" width="200" alt="Home screen: Health Connect, Withings and the latest sync">
+  <img src="docs/screenshots/data.png" width="200" alt="Data: latest values per source">
+  <img src="docs/screenshots/log.png" width="200" alt="Log of sync runs">
+  <img src="docs/screenshots/settings.png" width="200" alt="Settings for the Withings app and the sync">
 </p>
 
-<sub>Skärmdumparna är från emulatorn med påhittade värden.</sub>
+<sub>Screenshots are from the emulator with made-up values. The app is in English and Swedish and follows the
+phone's language.</sub>
 
-## Så fungerar det
+## How it works
 
 ```mermaid
 flowchart LR
-    W["Withings-molnet<br/>våg · blodtryck · sömn"] -->|"Withings API (OAuth 2.0)"| HB["HealthBridge"]
-    HB -->|"skriver"| HC[("Health Connect")]
-    HC <-->|"läser och skriver"| SH["Samsung Health"]
-    HC -.->|"läser för översikt och CSV-export"| HB
+    W["Withings cloud<br/>scale · blood pressure · sleep"] -->|"Withings API (OAuth 2.0)"| HB["HealthBridge"]
+    HB -->|"writes"| HC[("Health Connect")]
+    HC <-->|"reads and writes"| SH["Samsung Health"]
+    HC -.->|"reads for overview and CSV export"| HB
 ```
 
-HealthBridge hämtar dina mätningar från Withings och skriver in dem i Health Connect, Androids
-gemensamma lager för hälsodata. Samsung Health läser dem därifrån, precis som allt annat som
-finns i Health Connect. Ingen server behövs. Allt körs på telefonen och appen pratar bara med
-Withings eget API.
+HealthBridge fetches your measurements from Withings and writes them to Health Connect, Android's
+shared store for health data. Samsung Health reads them from there, like everything else in Health
+Connect. There is no server: everything runs on the phone, and the app only talks to Withings' own API.
 
-- **Automatisk synk i bakgrunden**, varje 1–24 timme. Det går också att synka direkt med *Synka nu*.
-- **Inga dubbletter.** Varje värde får ett fast ID (t.ex. `withings:meas:<grpid>:weight`). Om samma
-  data synkas igen, eller om du rättar ett värde i Withings, uppdateras posten i stället för att dubbleras.
-- **Säger till när något är fel.** Om Withings slutar godta inloggningen får du en avisering och en
-  knapp för att logga in igen. Synken fortsätter sedan där den slutade.
-- **Översikt och export.** Visar senaste värdena per källa (Samsung Health, Withings eller alla)
-  och kan exportera 30 dagars data som CSV.
-- **Krypterade nycklar.** Withings-nycklarna och Client Secret krypteras med en nyckel som ligger
-  kvar i telefonens Android Keystore.
+- **Automatic background sync** every 1–24 hours, plus *Sync now*.
+- **No duplicates.** Every value gets a stable ID (e.g. `withings:meas:<grpid>:weight`). Syncing the
+  same data again, or correcting a value in Withings, updates the record instead of adding a new one.
+- **Tells you when something is wrong.** If Withings stops accepting the login you get a notification
+  and a button to log in again, and the sync then picks up where it left off.
+- **Overview and export.** Shows the latest values per source (Samsung Health, Withings or all) and
+  exports 30 days of data as CSV.
+- **Encrypted keys.** The Withings tokens and the client secret are encrypted with a key that stays
+  in the phone's Android Keystore.
 
-### Vad som synkas
+### What gets synced
 
-| Från Withings | Till Health Connect |
+| From Withings | To Health Connect |
 |---|---|
-| Vikt, längd | `Weight`, `Height` |
-| Fettprocent, fettfri massa, benmassa, vatten | `BodyFat`, `LeanBodyMass`, `BoneMass`, `BodyWaterMass` |
-| Basalmetabolism (BMR) | `BasalMetabolicRate` |
-| Blodtryck och puls | `BloodPressure`, `HeartRate` |
-| Syremättnad, kroppstemperatur, VO₂ max | `OxygenSaturation`, `BodyTemperature`, `Vo2Max` |
-| Sömn med faser (vaken/lätt/djup/REM) | `SleepSession` med stadier |
-| Steg, distans och kalorier från en Withings-klocka *(avstängt som standard)* | `Steps`, `Distance`, `ActiveCaloriesBurned`, `TotalCaloriesBurned` |
+| Weight, height | `Weight`, `Height` |
+| Body fat, lean mass, bone mass, body water | `BodyFat`, `LeanBodyMass`, `BoneMass`, `BodyWaterMass` |
+| Basal metabolic rate (BMR) | `BasalMetabolicRate` |
+| Blood pressure and heart rate | `BloodPressure`, `HeartRate` |
+| Oxygen saturation, body temperature, VO₂ max | `OxygenSaturation`, `BodyTemperature`, `Vo2Max` |
+| Sleep with stages (awake/light/deep/REM) | `SleepSession` with stages |
+| Steps, distance and calories from a Withings watch *(off by default)* | `Steps`, `Distance`, `ActiveCaloriesBurned`, `TotalCaloriesBurned` |
 
-Steg är avstängt som standard, eftersom telefonen och Galaxy Watch redan räknar steg i Samsung
-Health. Slår du på det synkas bara steg från en Withings-tracker, så att steg som Withings
-själv hämtat från telefonen inte skrivs tillbaka.
+Steps are off by default because the phone and Galaxy Watch already count steps in Samsung Health.
+If you turn them on, only steps from a Withings tracker are synced, so steps that Withings itself
+collected from the phone aren't written back.
 
-## Kom igång
+## Getting started
 
-### 1. Skapa en Withings-utvecklarapp (en gång)
+### 1. Create a Withings developer app (once)
 
-1. Logga in på [developer.withings.com](https://developer.withings.com/dashboard/) och skapa en ny
-   applikation (*Public API*, gratis).
-2. Ange **Callback URL** `https://example.com/`. Appen fångar omdirigeringen innan sidan laddas,
-   så adressen behöver inte vara din egen. Den bör ändå svara med HTTP 200, eftersom Withings kan
-   testa att den går att nå. Det gör `example.com/` men inte `example.com/något`.
-3. Kopiera **Client ID** och **Client Secret**.
+1. Log in at [developer.withings.com](https://developer.withings.com/dashboard/) and create a new
+   application (*Public API*, free).
+2. Set the **Callback URL** to `https://example.com/`. The app catches the redirect before the page
+   loads, so the address doesn't have to be yours. It should still answer HTTP 200, because Withings
+   may check that it's reachable. `example.com/` does, `example.com/anything` doesn't.
+3. Copy the **Client ID** and **Client Secret**.
 
-Uppgifterna skrivs in i appen under *Inställningar*. Du kan också lägga dem i `local.properties`
-innan du bygger, så är de förifyllda:
+Enter them in the app under *Settings*, or put them in `local.properties` before building to have
+them pre-filled:
 
 ```properties
 withings.clientId=...
@@ -74,99 +74,101 @@ withings.clientSecret=...
 withings.redirectUri=https://example.com/
 ```
 
-### 2. Bygg och installera
+### 2. Build and install
 
-Slå på utvecklarläget på telefonen: *Inställningar → Om telefonen → Programvaruinformation*,
-tryck 7 gånger på *Byggnummer*. Slå sedan på *Utvecklaralternativ → USB-felsökning*. Anslut
-telefonen och kör:
+Turn on developer mode on the phone: *Settings → About phone → Software information*, tap
+*Build number* 7 times. Then turn on *Developer options → USB debugging*. Connect the phone and run:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\build-and-install.ps1
 ```
 
-Skriptet bygger, installerar och startar appen. Utan ansluten telefon skrivs sökvägen till
-`app\build\outputs\apk\debug\app-debug.apk` ut. Den filen kan du också kopiera till telefonen och
-installera för hand.
+The script builds, installs and starts the app. Without a connected phone it prints the path to
+`app\build\outputs\apk\debug\app-debug.apk`, which you can also copy to the phone and install by hand.
 
-Bygget kräver JDK 17 eller senare och Android SDK (compileSdk 37). Projektet går också att
-öppna direkt i Android Studio.
+Building needs JDK 17 or later and the Android SDK (compileSdk 37). The project also opens directly
+in Android Studio.
 
-### 3. I appen
+### 3. In the app
 
-1. **Inställningar:** fyll i Client ID, Client Secret och Callback-URL och tryck *Spara*.
-2. **Hem → Ge behörigheter** (Health Connect).
-3. **Hem → Logga in på Withings.** Första synken startar direkt och hämtar 30 dagars historik.
-   Det ändrar du under *Historik att hämta*.
-4. **Hem → Bakgrundskörning → Tillåt.** One UI söver appar som körs i bakgrunden, och då stannar
-   synken. Tillåt också aviseringar när appen frågar.
-5. **Samsung Health → Inställningar → Health Connect:** låt Samsung Health läsa vikt, kroppsfett,
-   blodtryck, sömn och så vidare.
-6. Stäng av motsvarande synk i Health Sync när du har jämfört, annars får du dubbla värden.
+1. **Settings:** enter Client ID, Client Secret and callback URL and tap *Save*.
+2. **Home → Grant permissions** (Health Connect).
+3. **Home → Log in to Withings.** The first sync starts right away and fetches 30 days of history
+   (change it under *History to fetch*).
+4. **Home → Background sync → Allow.** One UI puts background apps to sleep, which stops the sync.
+   Also allow notifications when the app asks.
+5. **Samsung Health → Settings → Health Connect:** let Samsung Health read weight, body fat, blood
+   pressure, sleep and so on.
+6. Turn off the matching sync in Health Sync once you've compared, or you'll get every value twice.
 
-Loggar du in på Withings med Google eller Apple kan den inbäddade inloggningen blockeras. Använd då
-*Logga in via webbläsaren* under Inställningar och klistra in adressen du hamnar på. Koden i den
-gäller bara i ungefär 30 sekunder.
+If you log in to Withings with Google or Apple, the embedded login may be blocked. Use
+*Log in through the browser* under Settings and paste the address you end up on. The code in it is
+only valid for about 30 seconds.
 
-## När något går fel
+## When something goes wrong
 
 <p>
-  <img src="docs/screenshots/needs-login.png" width="200" alt="Hemskärmen när Withings-inloggningen har slutat gälla" align="right">
+  <img src="docs/screenshots/needs-login.png" width="200" alt="Home screen when the Withings login has stopped working" align="right">
 </p>
 
-Tillfälliga fel, som att telefonen saknar nät eller att Withings svarar *för många anrop*, hanteras
-utan att du märker något. Synken försöker igen senare.
+Temporary problems, such as no network or Withings answering *too many requests*, are handled
+silently. The sync just tries again later.
 
-Om Withings slutar godta inloggningen, till exempel för att du tagit bort åtkomsten i
-Withings-appen, visar hemskärmen *Logga in igen* och du får en avisering:
+If Withings stops accepting the login, for example because you removed the access in the Withings
+app, the home screen shows *Log in again* and you get a notification:
 
-<img src="docs/screenshots/notification.png" width="360" alt="Avisering: Logga in på Withings igen">
+<img src="docs/screenshots/notification.png" width="360" alt="Notification: Log in to Withings again">
 
-Fliken *Logg* visar varje körning: vad som skrevs, vad som hoppades över och varför.
+The *Log* tab lists every run: what was written, what was skipped and why.
 
-- **Gav du en behörighet i efterhand eller ändrade historikperioden?** Välj *Hämta om historik*
-  under Inställningar. Redan skrivna värden uppdateras och dubbleras inte.
-- **Synkar den inte i bakgrunden?** Kontrollera att HealthBridge har *Obegränsad* batterianvändning
-  (*Inställningar → Appar → HealthBridge → Batteri*) och inte ligger bland *Sovande appar*.
+- **Granted a permission later or changed the history period?** Choose *Refetch history* under
+  Settings. Values that were already written are updated, not duplicated.
+- **Not syncing in the background?** Check that HealthBridge has *Unrestricted* battery use
+  (*Settings → Apps → HealthBridge → Battery*) and isn't listed under *Sleeping apps*.
 
 <br clear="right">
 
-## Begränsningar
+## Limitations
 
-- **Bara åt ett håll.** Withings publika API tillåter inte att man skriver data *till* Withings,
-  så Samsung Health → Withings går inte att bygga.
-- **Hämtning, inte push.** Withings rekommenderar webhooks, men de kräver en publik server. Appen
-  frågar i stället Withings med jämna mellanrum, högst en gång i timmen som standard.
-- **Inte testad mot ett riktigt Withings-konto än.** Hela synkflödet är testat i emulatorn mot en
-  låtsas-Withings-server och riktiga Health Connect. Inloggningen och felhanteringen är testade
-  mot Withings riktiga server, men med påhittade uppgifter.
+- **One direction only.** The Withings public API doesn't allow writing data *to* Withings, so
+  Samsung Health → Withings can't be built.
+- **Polling, not push.** Withings recommends webhooks, but they need a public server. The app polls
+  Withings instead, at most once an hour by default.
+- **Not tested against a real Withings account yet.** The whole sync flow is tested in the emulator
+  against a fake Withings server and the real Health Connect. Login and error handling are tested
+  against Withings' real server, but with made-up credentials.
 
-## Utveckling
+## Development
 
-Kotlin och Jetpack Compose (Material 3, dynamiska färger), AGP 9.4, Gradle 9.8, Health Connect 1.1.0,
-WorkManager, DataStore och OkHttp. `minSdk 28`, `targetSdk 36`.
+Kotlin and Jetpack Compose (Material 3, dynamic colours), AGP 9.4, Gradle 9.8, Health Connect 1.1.0,
+WorkManager, DataStore and OkHttp. `minSdk 28`, `targetSdk 36`.
 
 ```
 app/src/main/java/se/healthbridge/app/
-├── withings/       WithingsApi (OAuth + mätningar/aktivitet/sömn), parser, modeller
-├── healthconnect/  HealthConnectRepository (skriv/läs/exportera), WithingsRecordMapper
+├── withings/       WithingsApi (OAuth + measurements/activity/sleep), parser, models
+├── healthconnect/  HealthConnectRepository (write/read/export), WithingsRecordMapper
 ├── sync/           SyncEngine, SyncWorker, SyncScheduler, SyncNotifier
-├── data/           Inställningar (DataStore), krypterade hemligheter, synklogg
-└── ui/             Hem, Data, Logg, Inställningar, Withings-inloggning (WebView)
+├── data/           Settings (DataStore), encrypted secrets, sync log
+└── ui/             Home, Data, Log, Settings, Withings login (WebView)
 ```
 
-**Tester**
+UI text lives in `res/values/strings.xml` (English, the default) and `res/values-sv/strings.xml`
+(Swedish). On Android 13 and later you can also pick the app's language under
+*Settings → Apps → HealthBridge → Language*.
 
-- Enhetstester: `.\gradlew.bat :app:testDebugUnitTest`. De täcker Withings-parsning, OAuth-redirect
-  och mappning till Health Connect-poster, inklusive tidszoner, intervallgränser och sömnfaser.
-- Instrumenterade tester: `.\gradlew.bat :app:connectedDebugAndroidTest`. `SyncEngineInstrumentedTest`
-  kör hela synken mot en falsk Withings-server och riktiga Health Connect. Det täcker förnyelse av
-  nycklar, skrivning, uppdatering utan dubbletter, översikt och CSV, samt att en avvisad inloggning
-  ger *Logga in igen*. Testerna körs bara på en emulator, eftersom de skriver över appens
-  inställningar. Ge appen alla behörigheter först.
-- Om Hyper-V har reserverat emulatorns standardportar (5554–5585) startar den inte. Ange då en
-  annan port: `emulator -avd <namn> -port 5640`. Saknar emulatorn DNS, lägg till `-dns-server 8.8.8.8`.
+**Tests**
+
+- Unit tests: `.\gradlew.bat :app:testDebugUnitTest`. They cover Withings parsing, the OAuth redirect
+  and the mapping to Health Connect records, including time zones, range limits and sleep stages.
+- Instrumented tests: `.\gradlew.bat :app:connectedDebugAndroidTest`. `SyncEngineInstrumentedTest`
+  runs a full sync against a fake Withings server and the real Health Connect: token refresh,
+  writing, updating without duplicates, overview and CSV, and that a rejected login leads to
+  *Log in again*. They only run on an emulator, because they overwrite the app's settings. Grant the
+  app all permissions first.
+- If Hyper-V has reserved the emulator's default ports (5554–5585) it won't start. Pick another port:
+  `emulator -avd <name> -port 5640`. If the emulator has no DNS, add `-dns-server 8.8.8.8`.
 
 ---
 
-HealthBridge är ett privat hobbyprojekt och har ingen koppling till Withings, Samsung eller Google.
-Det är inte en medicinteknisk produkt.
+HealthBridge is a personal hobby project and isn't affiliated with Withings, Samsung or Google.
+It is not a medical device.

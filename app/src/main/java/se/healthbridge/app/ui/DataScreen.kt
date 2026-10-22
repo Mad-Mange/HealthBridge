@@ -1,5 +1,6 @@
 package se.healthbridge.app.ui
 
+import android.content.Context
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.horizontalScroll
@@ -29,8 +30,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import se.healthbridge.app.R
 import se.healthbridge.app.healthconnect.HealthConnectRepository
 import se.healthbridge.app.healthconnect.MetricSnapshot
 import se.healthbridge.app.healthconnect.SourceFilter
@@ -44,7 +47,7 @@ fun DataScreen(vm: MainViewModel) {
     val filter by vm.sourceFilter.collectAsStateWithLifecycle()
     val busy by vm.dataBusy.collectAsStateWithLifecycle()
     val hc by vm.healthConnect.collectAsStateWithLifecycle()
-    val ownPackage = LocalContext.current.packageName
+    val context = LocalContext.current
 
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
         if (uri != null) vm.exportCsv(uri, EXPORT_DAYS)
@@ -60,7 +63,7 @@ fun DataScreen(vm: MainViewModel) {
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         item {
-            ScreenTitle("Data", "Senaste värdena i Health Connect (30 dagar)")
+            ScreenTitle(stringResource(R.string.data_title), stringResource(R.string.data_subtitle))
         }
         item {
             Row(
@@ -71,7 +74,7 @@ fun DataScreen(vm: MainViewModel) {
                     FilterChip(
                         selected = filter == option,
                         onClick = { vm.loadData(option) },
-                        label = { Text(option.label) },
+                        label = { Text(stringResource(option.label)) },
                     )
                 }
             }
@@ -80,14 +83,14 @@ fun DataScreen(vm: MainViewModel) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = { vm.loadData() }, enabled = !busy) {
                     Icon(Icons.Filled.Refresh, contentDescription = null)
-                    Text("  Uppdatera")
+                    Text("  " + stringResource(R.string.data_refresh))
                 }
                 OutlinedButton(
                     onClick = { exportLauncher.launch("healthbridge-${LocalDate.now()}.csv") },
                     enabled = !busy && hc.available,
                 ) {
                     Icon(Icons.Filled.Share, contentDescription = null)
-                    Text("  Exportera CSV")
+                    Text("  " + stringResource(R.string.data_export))
                 }
             }
         }
@@ -96,29 +99,22 @@ fun DataScreen(vm: MainViewModel) {
         }
         val list = snapshots
         when {
-            !hc.available -> item { SupportingText("Health Connect är inte tillgängligt.") }
-            hc.grantedCount == 0 -> item { SupportingText("Ge Health Connect-behörigheter på startsidan för att se data.") }
+            !hc.available -> item { SupportingText(stringResource(R.string.data_hc_unavailable)) }
+            hc.grantedCount == 0 -> item { SupportingText(stringResource(R.string.data_no_permissions)) }
             list == null -> Unit
             list.isEmpty() -> item {
-                SupportingText(
-                    if (filter == SourceFilter.SAMSUNG) {
-                        "Ingen data från Samsung Health hittades. Kontrollera att Samsung Health synkar till Health Connect " +
-                            "(Samsung Health → Inställningar → Health Connect)."
-                    } else {
-                        "Ingen data hittades de senaste 30 dagarna."
-                    },
-                )
+                SupportingText(stringResource(if (filter == SourceFilter.SAMSUNG) R.string.data_no_samsung else R.string.data_empty))
             }
-            else -> items(list, key = { it.title }) { MetricCard(it, ownPackage) }
+            else -> items(list, key = { it.title }) { MetricCard(it, context) }
         }
         item {
-            SupportingText("CSV-exporten innehåller alla läsbara typer de senaste $EXPORT_DAYS dagarna för vald källa.")
+            SupportingText(stringResource(R.string.data_export_note, EXPORT_DAYS))
         }
     }
 }
 
 @Composable
-private fun MetricCard(snapshot: MetricSnapshot, ownPackage: String) {
+private fun MetricCard(snapshot: MetricSnapshot, context: Context) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
@@ -126,7 +122,7 @@ private fun MetricCard(snapshot: MetricSnapshot, ownPackage: String) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(snapshot.title, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(snapshot.value, style = MaterialTheme.typography.titleLarge)
-            val sources = snapshot.sources.joinToString { HealthConnectRepository.sourceName(it, ownPackage) }
+            val sources = snapshot.sources.joinToString { HealthConnectRepository.sourceName(context, it) }
             SupportingText(listOf(formatTime(snapshot.time), sources).filter { it.isNotBlank() }.joinToString(" · "))
         }
     }

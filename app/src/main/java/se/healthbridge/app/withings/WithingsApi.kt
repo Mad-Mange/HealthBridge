@@ -114,12 +114,12 @@ class WithingsApi(
             http.newCall(request).execute().use { response ->
                 val text = response.body.string()
                 if (!response.isSuccessful) {
-                    throw WithingsException("HTTP ${response.code} från Withings")
+                    throw WithingsException("HTTP ${response.code} from Withings")
                 }
                 val json = try {
                     JSONObject(text)
                 } catch (e: JSONException) {
-                    throw WithingsException("Oväntat svar från Withings: ${text.take(120)}")
+                    throw WithingsException("Unexpected response from Withings: ${text.take(120)}")
                 }
                 WithingsParser.unwrap(json)
             }

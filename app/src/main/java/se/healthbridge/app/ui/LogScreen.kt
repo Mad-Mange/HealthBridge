@@ -22,8 +22,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import se.healthbridge.app.R
 import se.healthbridge.app.data.LogEntry
 
 @Composable
@@ -36,12 +38,12 @@ fun LogScreen(vm: MainViewModel) {
     ) {
         item {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) { ScreenTitle("Logg", "Vad synken har gjort") }
-                if (entries.isNotEmpty()) TextButton(onClick = { vm.clearLog() }) { Text("Rensa") }
+                Column(Modifier.weight(1f)) { ScreenTitle(stringResource(R.string.log_title), stringResource(R.string.log_subtitle)) }
+                if (entries.isNotEmpty()) TextButton(onClick = { vm.clearLog() }) { Text(stringResource(R.string.log_clear)) }
             }
         }
         if (entries.isEmpty()) {
-            item { SupportingText("Inga händelser än.") }
+            item { SupportingText(stringResource(R.string.log_empty)) }
         }
         items(entries) { entry ->
             LogRow(entry)

@@ -27,7 +27,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.viewinterop.AndroidView
+import se.healthbridge.app.R
 import se.healthbridge.app.withings.WithingsRedirect
 
 /**
@@ -45,9 +47,9 @@ fun WithingsLoginScreen(login: LoginRequest, onRedirect: (String) -> Unit, onCan
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Logga in på Withings") },
+                title = { Text(stringResource(R.string.withings_log_in)) },
                 navigationIcon = {
-                    IconButton(onClick = onCancel) { Icon(Icons.Filled.Close, contentDescription = "Avbryt") }
+                    IconButton(onClick = onCancel) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.cancel)) }
                 },
             )
         },

@@ -11,6 +11,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -34,6 +35,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.health.connect.client.PermissionController
@@ -68,11 +70,11 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private enum class Tab(val label: String, val icon: ImageVector) {
-    HOME("Hem", Icons.Filled.Home),
-    DATA("Data", Icons.Filled.Favorite),
-    LOG("Logg", Icons.AutoMirrored.Filled.List),
-    SETTINGS("Inställningar", Icons.Filled.Settings),
+private enum class Tab(@StringRes val label: Int, val icon: ImageVector) {
+    HOME(R.string.tab_home, Icons.Filled.Home),
+    DATA(R.string.tab_data, Icons.Filled.Favorite),
+    LOG(R.string.tab_log, Icons.AutoMirrored.Filled.List),
+    SETTINGS(R.string.tab_settings, Icons.Filled.Settings),
 }
 
 @Composable
@@ -125,7 +127,7 @@ private fun HealthBridgeRoot(vm: MainViewModel) {
                         selected = tab == item,
                         onClick = { tab = item },
                         icon = { Icon(item.icon, contentDescription = null) },
-                        label = { Text(item.label) },
+                        label = { Text(stringResource(item.label)) },
                     )
                 }
             }

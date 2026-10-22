@@ -27,7 +27,7 @@ class AppContainer(context: Context) {
             .readTimeout(30, TimeUnit.SECONDS)
             .build(),
     )
-    val syncEngine = SyncEngine(settings, withingsApi, healthConnect, syncLog)
+    val syncEngine = SyncEngine(context, settings, withingsApi, healthConnect, syncLog)
 }
 
 class HealthBridgeApp : Application() {

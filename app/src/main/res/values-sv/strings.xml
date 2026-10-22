@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="date_locale">sv</string>
+    <string name="time_today">idag %1$s</string>
+    <string name="time_yesterday">igår %1$s</string>
+    <string name="time_tomorrow">imorgon %1$s</string>
+    <string name="interval_hourly">varje timme</string>
+    <string name="interval_daily">en gång per dygn</string>
+    <string name="interval_hours">var %1$d:e timme</string>
+
+    <string name="tab_home">Hem</string>
+    <string name="tab_data">Data</string>
+    <string name="tab_log">Logg</string>
+    <string name="tab_settings">Inställningar</string>
+
+    <string name="loading">Laddar…</string>
+    <string name="hc_checking">Kontrollerar…</string>
+    <string name="hc_update_required">Health Connect behöver uppdateras.</string>
+    <string name="hc_missing">Health Connect finns inte på den här enheten.</string>
+    <string name="hc_update_button">Uppdatera i Play Butik</string>
+    <string name="hc_all_granted">Alla %1$d behörigheter är beviljade.</string>
+    <string name="hc_some_granted">%1$d av %2$d behörigheter beviljade. Appen behöver skriva Withings-data och läsa data för översikten.</string>
+    <string name="hc_grant_button">Ge behörigheter</string>
+    <string name="withings_connecting">Ansluter…</string>
+    <string name="withings_needs_login">Withings godtar inte längre inloggningen, så synken står still. Logga in igen så fortsätter den där den slutade.</string>
+    <string name="withings_log_in_again">Logga in igen</string>
+    <string name="withings_connected">Ansluten (användar-ID %1$s).</string>
+    <string name="withings_setup_needed">Skapa en app på developer.withings.com och fyll i Client ID, Client Secret och Callback-URL.</string>
+    <string name="go_to_settings">Till inställningar</string>
+    <string name="withings_not_connected">Inte ansluten.</string>
+    <string name="withings_log_in">Logga in på Withings</string>
+    <string name="sync_title">Synkronisering</string>
+    <string name="sync_last">Senast %1$s</string>
+    <string name="sync_never">Ingen synk har körts än.</string>
+    <string name="sync_automatic">Automatiskt %1$s</string>
+    <string name="sync_automatic_next">Automatiskt %1$s · nästa %2$s</string>
+    <string name="sync_running">Synkar…</string>
+    <string name="sync_now">Synka nu</string>
+    <string name="battery_title">Bakgrundskörning</string>
+    <string name="battery_text">Samsung söver appar som körs i bakgrunden för att spara batteri, och då stannar synken. Tillåt HealthBridge att alltid köras i bakgrunden (obegränsad batterianvändning).</string>
+    <string name="battery_allow">Tillåt</string>
+    <string name="samsung_text">Samsung Health läser Withings-värdena via Health Connect. Öppna Samsung Health → Inställningar → Health Connect och se till att vikt, blodtryck, sömn m.m. får läsas.</string>
+    <string name="samsung_open">Öppna Samsung Health</string>
+
+    <string name="data_title">Data</string>
+    <string name="data_subtitle">Senaste värdena i Health Connect (30 dagar)</string>
+    <string name="source_all">Alla källor</string>
+    <string name="data_refresh">Uppdatera</string>
+    <string name="data_export">Exportera CSV</string>
+    <string name="data_hc_unavailable">Health Connect är inte tillgängligt.</string>
+    <string name="data_no_permissions">Ge Health Connect-behörigheter på startsidan för att se data.</string>
+    <string name="data_no_samsung">Ingen data från Samsung Health hittades. Kontrollera att Samsung Health synkar till Health Connect (Samsung Health → Inställningar → Health Connect).</string>
+    <string name="data_empty">Ingen data hittades de senaste 30 dagarna.</string>
+    <string name="data_export_note">CSV-exporten innehåller alla läsbara typer de senaste %1$d dagarna för vald källa.</string>
+    <string name="metric_steps_today">Steg idag</string>
+    <string name="metric_sleep">Sömn</string>
+    <string name="metric_weight">Vikt</string>
+    <string name="metric_body_fat">Fettprocent</string>
+    <string name="metric_blood_pressure">Blodtryck</string>
+    <string name="metric_heart_rate">Puls</string>
+    <string name="metric_resting_heart_rate">Vilopuls</string>
+    <string name="metric_spo2">Syremättnad</string>
+    <string name="metric_exercise">Träning</string>
+    <string name="metric_body_temperature">Kroppstemperatur</string>
+    <string name="exercise_default_title">Pass</string>
+    <string name="source_name_withings_app">Withings-appen</string>
+
+    <string name="type_weight">vikt</string>
+    <string name="type_height">längd</string>
+    <string name="type_body_fat">fettprocent</string>
+    <string name="type_lean_mass">fettfri massa</string>
+    <string name="type_bone_mass">benmassa</string>
+    <string name="type_body_water">vatten</string>
+    <string name="type_blood_pressure">blodtryck</string>
+    <string name="type_heart_rate">puls</string>
+    <string name="type_temperature">temperatur</string>
+    <string name="type_steps">steg</string>
+    <string name="type_distance">distans</string>
+    <string name="type_active_kcal">aktiva kcal</string>
+    <string name="type_total_kcal">totala kcal</string>
+    <string name="type_sleep">sömn</string>
+
+    <string name="sync_failed_login">Withings-inloggningen gäller inte längre – logga in igen (%1$s)</string>
+    <string name="sync_retry_withings">Tillfälligt fel, försöker igen senare (%1$s)</string>
+    <string name="sync_retry_network">Nätverksfel: %1$s</string>
+    <string name="sync_failed_hc">Health Connect nekade åtkomst: %1$s</string>
+    <string name="sync_failed_other">Fel: %1$s</string>
+    <string name="sync_skipped">Synk hoppades över: %1$s</string>
+    <string name="skip_hc_unavailable">Health Connect är inte tillgängligt</string>
+    <string name="skip_no_credentials">Withings Client ID/Secret saknas</string>
+    <string name="skip_not_connected">Withings är inte anslutet</string>
+    <string name="skip_nothing_selected">Inga datatyper valda</string>
+    <string name="sync_nothing_new">Inget nytt från Withings</string>
+    <plurals name="sync_wrote">
+        <item quantity="one">Skrev %1$d post: %2$s</item>
+        <item quantity="other">Skrev %1$d poster: %2$s</item>
+    </plurals>
+    <string name="sync_no_permission_for">%1$s (saknar behörighet för %2$s)</string>
+    <string name="sync_denied_warning">Saknar skrivbehörighet i Health Connect för: %1$s. Ge behörighet och välj \"Hämta om historik\" i Inställningar.</string>
+    <plurals name="sync_values_skipped">
+        <item quantity="one">%d värde hoppades över (utanför Health Connects tillåtna intervall).</item>
+        <item quantity="other">%d värden hoppades över (utanför Health Connects tillåtna intervall).</item>
+    </plurals>
+
+    <string name="notif_channel">Synkproblem</string>
+    <string name="notif_channel_description">När synken från Withings har slutat fungera</string>
+    <string name="notif_title_login">Logga in på Withings igen</string>
+    <string name="notif_title_failed">Synken från Withings misslyckades</string>
+
+    <string name="msg_no_permissions">Inga behörigheter gavs</string>
+    <string name="msg_credentials_saved">Withings-uppgifter sparade</string>
+    <string name="msg_redirect_unreadable">Kunde inte läsa adressen från Withings</string>
+    <string name="msg_state_mismatch">Svaret hör inte till senaste inloggningen – försök igen</string>
+    <string name="msg_no_code">Ingen kod i adressen från Withings</string>
+    <string name="msg_disconnected">Withings frånkopplat</string>
+    <string name="msg_fill_credentials">Fyll i Client ID, Client Secret och Callback-URL under Inställningar först</string>
+    <string name="msg_connected_log">Ansluten till Withings (användar-ID %1$s)</string>
+    <string name="msg_connected">Withings anslutet – första synken har startat</string>
+    <string name="msg_login_failed_log">Withings-inloggningen misslyckades: %1$s</string>
+    <string name="msg_login_failed">Inloggningen misslyckades: %1$s</string>
+    <string name="msg_connect_first">Anslut Withings först</string>
+    <string name="msg_history_reset">Synkstatus nollställd – hämtar om historiken</string>
+    <string name="msg_read_failed">Kunde inte läsa Health Connect: %1$s</string>
+    <string name="msg_open_file_failed">kunde inte öppna filen</string>
+    <plurals name="msg_exported">
+        <item quantity="one">Exporterade %d rad</item>
+        <item quantity="other">Exporterade %d rader</item>
+    </plurals>
+    <string name="msg_export_failed">Exporten misslyckades: %1$s</string>
+
+    <string name="log_title">Logg</string>
+    <string name="log_subtitle">Vad synken har gjort</string>
+    <string name="log_clear">Rensa</string>
+    <string name="log_empty">Inga händelser än.</string>
+
+    <string name="settings_title">Inställningar</string>
+    <string name="settings_withings_app">Withings-utvecklarapp</string>
+    <string name="settings_withings_help">Skapa en app (Public API) på developer.withings.com och ange samma Callback-URL där som här. https://example.com/ fungerar bra, eftersom HealthBridge fångar omdirigeringen innan sidan laddas.</string>
+    <string name="callback_url">Callback-URL</string>
+    <string name="show">Visa</string>
+    <string name="hide">Dölj</string>
+    <string name="save">Spara</string>
+    <string name="open_withings_developer">Öppna Withings Developer</string>
+    <string name="settings_connection">Anslutning</string>
+    <string name="settings_connected_as">Ansluten som användar-ID %1$s</string>
+    <string name="disconnect_withings">Koppla från Withings</string>
+    <string name="ext_login_show">Fungerar inte inloggningen? Logga in via webbläsaren</string>
+    <string name="ext_login_hide">Dölj alternativ inloggning</string>
+    <string name="ext_login_steps">1. Tryck \"Öppna webbläsare\" och logga in. 2. När du hamnar på Callback-sidan (den kan visa ett fel), kopiera hela adressen. 3. Klistra in den här och tryck \"Slutför\" inom 30 sekunder.</string>
+    <string name="ext_open_browser">Öppna webbläsare</string>
+    <string name="ext_paste_label">Adress med ?code=…</string>
+    <string name="ext_finish">Slutför</string>
+    <string name="settings_what">Vad ska synkas till Health Connect</string>
+    <string name="opt_measures">Mätningar</string>
+    <string name="opt_measures_desc">Vikt, fettprocent, fettfri massa, benmassa, vatten, BMR, blodtryck, puls, SpO₂, temperatur, VO₂ max</string>
+    <string name="opt_sleep">Sömn</string>
+    <string name="opt_sleep_desc">Sömnpass med faser (Sleep Analyzer / klocka)</string>
+    <string name="opt_activity">Aktivitet</string>
+    <string name="opt_activity_desc">Steg, distans och kalorier från en Withings-klocka. Lämna av om telefonen/Galaxy Watch redan räknar steg – annars dubbelräknas de.</string>
+    <string name="settings_how_often">Hur ofta</string>
+    <string name="interval_chip_hours">%1$d h</string>
+    <string name="interval_chip_day">1 dygn</string>
+    <string name="settings_battery_note">Android kan skjuta upp bakgrundsjobb för att spara batteri.</string>
+    <string name="settings_history">Historik att hämta</string>
+    <string name="days_chip">%1$d dagar</string>
+    <string name="settings_history_note">Gäller första synken och \"Hämta om historik\". Redan synkade värden dubbleras inte.</string>
+    <string name="refetch_history">Hämta om historik</string>
+    <string name="hc_permissions">Behörigheter</string>
+    <string name="hc_manage_data">Hantera data</string>
+
+    <string name="cancel">Avbryt</string>
+
+    <string name="privacy_title">Integritet i HealthBridge</string>
+    <string name="privacy_what">HealthBridge hämtar dina mätvärden (vikt, kroppssammansättning, blodtryck, puls, sömn och aktivitet) från ditt Withings-konto och skriver in dem i Health Connect på den här telefonen, så att Samsung Health och andra appar kan se dem.</string>
+    <string name="privacy_read">Appen läser data från Health Connect (t.ex. från Samsung Health) enbart för att visa översikten och för export till en CSV-fil som du själv väljer att spara.</string>
+    <string name="privacy_where">Ingen hälsodata skickas till någon annan server än Withings egna API. Inloggningsnycklar lagras krypterat på telefonen och kan tas bort när som helst via \"Koppla från Withings\".</string>
+    <string name="close">Stäng</string>
+</resources>

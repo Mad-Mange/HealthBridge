@@ -101,6 +101,14 @@
         <item quantity="one">%d värde hoppades över (utanför Health Connects tillåtna intervall).</item>
         <item quantity="other">%d värden hoppades över (utanför Health Connects tillåtna intervall).</item>
     </plurals>
+    <plurals name="sync_removed">
+        <item quantity="one">Tog bort %d mätning som raderats i Withings</item>
+        <item quantity="other">Tog bort %d mätningar som raderats i Withings</item>
+    </plurals>
+    <plurals name="sync_unassigned">
+        <item quantity="one">%d mätning väntar på att du bekräftar i Withings-appen att den är din</item>
+        <item quantity="other">%d mätningar väntar på att du bekräftar i Withings-appen att de är dina</item>
+    </plurals>
 
     <string name="notif_channel">Synkproblem</string>
     <string name="notif_channel_description">När synken från Withings har slutat fungera</string>

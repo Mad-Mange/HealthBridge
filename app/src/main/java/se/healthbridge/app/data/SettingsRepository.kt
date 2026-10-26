@@ -34,6 +34,8 @@ data class SyncState(
     val measuresCursor: Long? = null,
     val sleepCursor: Long? = null,
     val activityCursor: Long? = null,
+    /** Withings measure groups written to Health Connect: group id -> measurement time (epoch seconds). */
+    val writtenMeasureGroups: Map<Long, Long> = emptyMap(),
     val lastRunAt: Long? = null,
     val lastRunOk: Boolean = false,
     val lastRunSummary: String? = null,
@@ -103,11 +105,19 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
+    /** Also forgets which measurements were written: a refetch writes them again, a new user has others. */
     suspend fun resetCursors() {
         context.dataStore.edit {
             it.remove(MEASURES_CURSOR)
             it.remove(SLEEP_CURSOR)
             it.remove(ACTIVITY_CURSOR)
+            it.remove(WRITTEN_MEASURE_GROUPS)
+        }
+    }
+
+    suspend fun saveWrittenMeasureGroups(groups: Map<Long, Long>) {
+        context.dataStore.edit {
+            it[WRITTEN_MEASURE_GROUPS] = groups.entries.joinToString(",") { (id, time) -> "$id:$time" }
         }
     }
 
@@ -150,6 +160,7 @@ class SettingsRepository(private val context: Context) {
                 measuresCursor = this[MEASURES_CURSOR],
                 sleepCursor = this[SLEEP_CURSOR],
                 activityCursor = this[ACTIVITY_CURSOR],
+                writtenMeasureGroups = parseGroups(this[WRITTEN_MEASURE_GROUPS]),
                 lastRunAt = this[LAST_RUN_AT],
                 lastRunOk = this[LAST_RUN_OK] ?: false,
                 lastRunSummary = this[LAST_RUN_SUMMARY],
@@ -157,6 +168,13 @@ class SettingsRepository(private val context: Context) {
             ),
         )
     }
+
+    private fun parseGroups(value: String?): Map<Long, Long> =
+        value.orEmpty().split(',').mapNotNull { entry ->
+            val id = entry.substringBefore(':').toLongOrNull()
+            val time = entry.substringAfter(':', "").toLongOrNull()
+            if (id != null && time != null) id to time else null
+        }.toMap()
 
     private companion object {
         val CLIENT_ID = stringPreferencesKey("withings_client_id")
@@ -174,6 +192,7 @@ class SettingsRepository(private val context: Context) {
         val MEASURES_CURSOR = longPreferencesKey("cursor_measures")
         val SLEEP_CURSOR = longPreferencesKey("cursor_sleep")
         val ACTIVITY_CURSOR = longPreferencesKey("cursor_activity")
+        val WRITTEN_MEASURE_GROUPS = stringPreferencesKey("written_measure_groups")
         val LAST_RUN_AT = longPreferencesKey("last_run_at")
         val LAST_RUN_OK = booleanPreferencesKey("last_run_ok")
         val LAST_RUN_SUMMARY = stringPreferencesKey("last_run_summary")

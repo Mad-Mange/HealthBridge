@@ -49,6 +49,30 @@ class WithingsRecordMapperTest {
     }
 
     @Test
+    fun `unassigned measurements and goals are not written`() {
+        val ambiguous = group(MeasureType.WEIGHT to 72.0, attrib = 1, id = 2)
+        val goal = group(MeasureType.WEIGHT to 75.0, id = 3).copy(category = 2)
+        val mapped = WithingsRecordMapper.measureGroups(listOf(ambiguous, goal, group(MeasureType.WEIGHT to 80.0, id = 4)), stockholm)
+        assertEquals(listOf("withings:meas:4:weight"), mapped.records.map { it.metadata.clientRecordId })
+    }
+
+    @Test
+    fun `record ids for removal cover every type a group can produce`() {
+        val mapped = WithingsRecordMapper.measureGroups(
+            listOf(
+                group(MeasureType.WEIGHT to 80.0, MeasureType.FAT_RATIO to 18.0, MeasureType.HEIGHT to 1.8, id = 9),
+                group(MeasureType.SYSTOLIC_BP to 120.0, MeasureType.DIASTOLIC_BP to 80.0, MeasureType.HEART_PULSE to 60.0, id = 9),
+            ),
+            stockholm,
+        )
+        val ids = WithingsRecordMapper.measureRecordIds(listOf(9L))
+        for (record in mapped.records) {
+            assertTrue(record.metadata.clientRecordId, record.metadata.clientRecordId in ids.getValue(record::class))
+        }
+        assertEquals(emptyMap<Any, Any>(), WithingsRecordMapper.measureRecordIds(emptyList()))
+    }
+
+    @Test
     fun `manual entries are marked as manual`() {
         val mapped = WithingsRecordMapper.measureGroups(listOf(group(MeasureType.WEIGHT to 80.0, attrib = 2)), stockholm)
         assertEquals(Metadata.RECORDING_METHOD_MANUAL_ENTRY, mapped.records.single().metadata.recordingMethod)

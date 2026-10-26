@@ -74,6 +74,16 @@ class HealthConnectRepository(private val context: Context) {
         return InsertResult(allowed.size, denied.map { it::class }.toSet())
     }
 
+    /** Deletes this app's records by client record id. Ids that don't exist and types we can't write are skipped. */
+    suspend fun deleteByClientIds(ids: Map<KClass<out Record>, List<String>>) {
+        if (ids.isEmpty()) return
+        val granted = grantedPermissions()
+        for ((type, clientIds) in ids) {
+            if (HealthPermission.getWritePermission(type) !in granted) continue
+            clientIds.chunked(INSERT_CHUNK).forEach { client.deleteRecords(type, emptyList(), it) }
+        }
+    }
+
     /** Latest values per data type, optionally only from one source app. Must run in the foreground. */
     suspend fun latestSnapshots(filter: SourceFilter): List<MetricSnapshot> {
         val granted = grantedPermissions()

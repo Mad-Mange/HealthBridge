@@ -61,9 +61,13 @@ class SyncEngineInstrumentedTest {
     private val bpAt = now - 3 * 3600
     private val sleepStart = now - 9 * 3600
     private val sleepEnd = now - 3600
+    private val guestAt = now - 1800
 
     @Volatile private var weightGrams = 80_450
     @Volatile private var weightModified = weighInAt
+    @Volatile private var weighInDeleted = false
+    /** Attrib of a weigh-in by someone else on the scale: null = none, 1 = unassigned, 0 = assigned to the user. */
+    @Volatile private var guestAttrib: Int? = null
     @Volatile private var sleepStagesStatus = 0
 
     @Before
@@ -175,6 +179,37 @@ class SyncEngineInstrumentedTest {
         assertNotNull(settings.current().state.sleepCursor)
     }
 
+    @Test
+    fun measurementsDeletedOrUnassignedInWithingsStayOutOfHealthConnect() = runBlocking {
+        val api = WithingsApi(OkHttpClient(), server.url("/").toString().trimEnd('/'))
+        val engine = SyncEngine(context, settings, api, healthConnect, SyncLog(context))
+        val res = context.resources
+        settings.saveOptions(SyncOptions(intervalHours = 1, backfillDays = 7, measures = true, sleep = false, activity = false))
+
+        guestAttrib = 1
+        val first = engine.sync()
+        assertEquals(first.summary, SyncEngine.Outcome.SUCCESS, first.outcome)
+        assertTrue(first.summary, first.summary.contains(res.getQuantityString(R.plurals.sync_unassigned, 1, 1)))
+        assertEquals("the unassigned weigh-in isn't written", listOf("withings:meas:900001:weight"), weightIds())
+
+        // The user deletes the weigh-in in Withings and confirms the guest's one was theirs after all.
+        // Neither changes anything the incremental fetch (lastupdate) returns.
+        weighInDeleted = true
+        guestAttrib = 0
+        val second = engine.sync()
+        assertEquals(second.summary, SyncEngine.Outcome.SUCCESS, second.outcome)
+        assertTrue(second.summary, second.summary.contains(res.getQuantityString(R.plurals.sync_removed, 1, 1)))
+        assertEquals(listOf("withings:meas:900004:weight"), weightIds())
+        assertTrue("body fat from the deleted weigh-in goes too", readTestRecords(BodyFatRecord::class).isEmpty())
+        assertEquals("other measurements stay", 1, readTestRecords(BloodPressureRecord::class).size)
+        assertTrue(requests.any { it == "/measure getmeas lastupdate" } && requests.any { it == "/measure getmeas startdate" })
+
+        val third = engine.sync()
+        assertEquals(third.summary, context.getString(R.string.sync_nothing_new), third.summary)
+    }
+
+    private suspend fun weightIds(): List<String?> = readTestRecords(WeightRecord::class).map { it.metadata.clientRecordId }
+
     private suspend fun <T : Record> readTestRecords(type: KClass<T>): List<T> {
         val client = HealthConnectClient.getOrCreate(context)
         val range = TimeRangeFilter.between(Instant.now().minus(Duration.ofDays(1)), Instant.now().plusSeconds(60))
@@ -193,19 +228,15 @@ class SyncEngineInstrumentedTest {
                 URLDecoder.decode(it.substringBefore('='), "UTF-8") to URLDecoder.decode(it.substringAfter('='), "UTF-8")
             }
             val path = request.url.encodedPath
-            requests += "$path ${form["action"]}"
+            requests += if (path == "/measure") "$path ${form["action"]} ${if ("lastupdate" in form) "lastupdate" else "startdate"}"
+            else "$path ${form["action"]}"
             val body = when {
                 path == "/v2/oauth2" && form["refresh_token"] == "refresh-1" && form["client_secret"] == "secret" ->
                     """{"status":0,"body":{"userid":"42","access_token":"access-2","refresh_token":"refresh-2","expires_in":10800}}"""
                 path == "/v2/oauth2" -> """{"status":503,"error":"Invalid Params"}"""
                 request.headers["Authorization"] != "Bearer access-2" -> """{"status":401,"error":"invalid_token"}"""
-                path == "/measure" -> """
-                    {"status":0,"body":{"timezone":"Europe/Stockholm","more":0,"offset":0,"measuregrps":[
-                     {"grpid":900001,"attrib":0,"date":$weighInAt,"modified":$weightModified,"category":1,"model":"Body+",
-                      "measures":[{"value":$weightGrams,"type":1,"unit":-3},{"value":205,"type":6,"unit":-1}]},
-                     {"grpid":900002,"attrib":0,"date":$bpAt,"modified":$bpAt,"category":1,"model":"BPM Connect",
-                      "measures":[{"value":124,"type":10,"unit":0},{"value":81,"type":9,"unit":0},{"value":63,"type":11,"unit":0}]}]}}
-                """.trimIndent()
+                path == "/measure" ->
+                    """{"status":0,"body":{"timezone":"Europe/Stockholm","more":0,"offset":0,"measuregrps":[${measureGroups(form)}]}}"""
                 path == "/v2/sleep" && form["action"] == "getsummary" -> """
                     {"status":0,"body":{"more":false,"offset":0,"series":[
                      {"id":900003,"startdate":$sleepStart,"enddate":$sleepEnd,"timezone":"Europe/Stockholm","model":32,"modified":$sleepEnd}]}}
@@ -222,11 +253,39 @@ class SyncEngineInstrumentedTest {
             }
             return MockResponse.Builder().code(200).body(body).build()
         }
+
+        /** Filters like Withings: `lastupdate` on the modified time, `startdate`/`enddate` on the measurement time. */
+        private fun measureGroups(form: Map<String, String>): String {
+            data class Group(val date: Long, val modified: Long, val json: String)
+            val groups = listOfNotNull(
+                Group(weighInAt, weightModified, """
+                    {"grpid":900001,"attrib":0,"date":$weighInAt,"modified":$weightModified,"category":1,"model":"Body+",
+                     "measures":[{"value":$weightGrams,"type":1,"unit":-3},{"value":205,"type":6,"unit":-1}]}
+                """.trimIndent()).takeUnless { weighInDeleted },
+                Group(bpAt, bpAt, """
+                    {"grpid":900002,"attrib":0,"date":$bpAt,"modified":$bpAt,"category":1,"model":"BPM Connect",
+                     "measures":[{"value":124,"type":10,"unit":0},{"value":81,"type":9,"unit":0},{"value":63,"type":11,"unit":0}]}
+                """.trimIndent()),
+                guestAttrib?.let { attrib ->
+                    Group(guestAt, guestAt, """
+                        {"grpid":900004,"attrib":$attrib,"date":$guestAt,"modified":$guestAt,"category":1,"model":"Body+",
+                         "measures":[{"value":72300,"type":1,"unit":-3}]}
+                    """.trimIndent())
+                },
+            )
+            val lastUpdate = form["lastupdate"]?.toLong()
+            val start = form["startdate"]?.toLong()
+            val end = form["enddate"]?.toLong()
+            return groups.filter {
+                (lastUpdate == null || it.modified >= lastUpdate) &&
+                    (start == null || it.date >= start) && (end == null || it.date <= end)
+            }.joinToString(",") { it.json }
+        }
     }
 
     private companion object {
         val TEST_IDS: Map<KClass<out Record>, List<String>> = mapOf(
-            WeightRecord::class to listOf("withings:meas:900001:weight"),
+            WeightRecord::class to listOf("withings:meas:900001:weight", "withings:meas:900004:weight"),
             BodyFatRecord::class to listOf("withings:meas:900001:fat"),
             BloodPressureRecord::class to listOf("withings:meas:900002:bp"),
             HeartRateRecord::class to listOf("withings:meas:900002:hr"),

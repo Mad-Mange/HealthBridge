@@ -34,6 +34,11 @@ Connect. There is no server: everything runs on the phone, and the app only talk
 - **Automatic background sync** every 1–24 hours, plus *Sync now*.
 - **No duplicates.** Every value gets a stable ID (e.g. `withings:meas:<grpid>:weight`). Syncing the
   same data again, or correcting a value in Withings, updates the record instead of adding a new one.
+- **Deleted in Withings, deleted here.** A measurement from the last 30 days that you delete in
+  Withings, or assign to another user, is also removed from Health Connect.
+- **Only your own weigh-ins.** When a shared scale can't tell who stepped on it, Withings asks you to
+  confirm the measurement in its app. HealthBridge waits until you have, so a guest's weight never
+  ends up in Samsung Health.
 - **Tells you when something is wrong.** If Withings stops accepting the login you get a notification
   and a button to log in again, and the sync then picks up where it left off.
 - **Overview and export.** Shows the latest values per source (Samsung Health, Withings or all) and
@@ -151,6 +156,9 @@ The *Log* tab lists every run: what was written, what was skipped and why.
   Samsung Health → Withings can't be built.
 - **Polling, not push.** Withings recommends webhooks, but they need a public server. The app polls
   Withings instead, at most once an hour by default.
+- **Deletions only for measurements.** Withings' API doesn't report deletions, so HealthBridge
+  compares the last 30 days of measurements (weight, blood pressure and so on) on every run.
+  Sleep and steps you delete in Withings stay in Health Connect; remove them there if needed.
 - **Not tested against a real Withings account yet.** The whole sync flow is tested in the emulator
   against a fake Withings server and the real Health Connect. Login and error handling are tested
   against Withings' real server, but with made-up credentials.
@@ -175,12 +183,13 @@ UI text lives in `res/values/strings.xml` (English, the default) and `res/values
 
 **Tests**
 
-- Unit tests: `.\gradlew.bat :app:testDebugUnitTest`. They cover Withings parsing, the OAuth redirect
-  and the mapping to Health Connect records, including time zones, range limits and sleep stages.
+- Unit tests: `.\gradlew.bat :app:testDebugUnitTest`. They cover Withings parsing, the OAuth redirect,
+  the mapping to Health Connect records (time zones, range limits, sleep stages) and which
+  measurements to write or remove when Withings' data has changed.
 - Instrumented tests: `.\gradlew.bat :app:connectedDebugAndroidTest`. `SyncEngineInstrumentedTest`
   runs a full sync against a fake Withings server and the real Health Connect: token refresh,
-  writing, updating without duplicates, overview and CSV, and that a rejected login leads to
-  *Log in again*. They only run on an emulator, because they overwrite the app's settings. Grant the
+  writing, updating without duplicates, removing deleted measurements, holding back unassigned
+  ones, overview and CSV, and that a rejected login leads to *Log in again*. They only run on an emulator, because they overwrite the app's settings. Grant the
   app all permissions first.
 - If Hyper-V has reserved the emulator's default ports (5554–5585) it won't start. Pick another port:
   `emulator -avd <name> -port 5640`. If the emulator has no DNS, add `-dns-server 8.8.8.8`.

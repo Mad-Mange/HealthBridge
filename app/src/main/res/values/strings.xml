@@ -119,6 +119,14 @@
         <item quantity="one">%d value was skipped (outside the range Health Connect allows).</item>
         <item quantity="other">%d values were skipped (outside the range Health Connect allows).</item>
     </plurals>
+    <plurals name="sync_removed">
+        <item quantity="one">Removed %d measurement that was deleted in Withings</item>
+        <item quantity="other">Removed %d measurements that were deleted in Withings</item>
+    </plurals>
+    <plurals name="sync_unassigned">
+        <item quantity="one">%d measurement waits for you to confirm it\'s yours in the Withings app</item>
+        <item quantity="other">%d measurements wait for you to confirm they\'re yours in the Withings app</item>
+    </plurals>
 
     <!-- Notification -->
     <string name="notif_channel">Sync problems</string>

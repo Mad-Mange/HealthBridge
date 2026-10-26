@@ -13,6 +13,7 @@ import se.healthbridge.app.data.SettingsRepository
 import se.healthbridge.app.data.SyncLog
 import se.healthbridge.app.healthconnect.HealthConnectRepository
 import se.healthbridge.app.healthconnect.WithingsRecordMapper
+import se.healthbridge.app.withings.MeasureGroup
 import se.healthbridge.app.withings.Page
 import se.healthbridge.app.withings.WithingsApi
 import se.healthbridge.app.withings.WithingsAuthException
@@ -97,9 +98,21 @@ class SyncEngine(
         if (options.measures) {
             val since = current.state.measuresCursor ?: backfillStart
             val groups = fetchAll { offset -> session.call { api.getMeasures(it, since, offset) } }
-            val mapped = WithingsRecordMapper.measureGroups(groups)
-            tally.add(mapped.records, mapped.skipped, healthConnect.insert(mapped.records))
+            writeMeasures(groups, tally)
+            val written = current.state.writtenMeasureGroups + groups.filter { it.isSyncable }.associate { it.id to it.date }
             settings.saveCursors(measures = startedAt, sleep = null, activity = null)
+            settings.saveWrittenMeasureGroups(written)
+
+            // Never further back than the history the user asked for, so nothing older gets written.
+            val start = startedAt - minOf(options.backfillDays.toLong(), RECHECK_DAYS) * SECONDS_PER_DAY
+            val end = startedAt + SECONDS_PER_DAY // a device clock that runs ahead
+            val recent = fetchAll { offset -> session.call { api.getMeasuresTakenBetween(it, start, end, offset) } }
+            val plan = MeasureReconciler.plan(written, recent, start, end)
+            healthConnect.deleteByClientIds(WithingsRecordMapper.measureRecordIds(plan.remove))
+            writeMeasures(plan.write, tally)
+            settings.saveWrittenMeasureGroups(plan.written)
+            tally.removed += plan.remove.size
+            tally.unassigned = recent.count { it.category == 1 && it.isAmbiguous }
         }
 
         if (options.sleep) {
@@ -139,6 +152,11 @@ class SyncEngine(
         return Result(Outcome.SUCCESS, tally.summary())
     }
 
+    private suspend fun writeMeasures(groups: List<MeasureGroup>, tally: Tally) {
+        val mapped = WithingsRecordMapper.measureGroups(groups)
+        tally.add(mapped.records, mapped.skipped, healthConnect.insert(mapped.records))
+    }
+
     private fun skipped(@StringRes reason: Int) = Result(Outcome.SKIPPED, text(reason))
 
     private fun text(@StringRes id: Int, vararg args: Any): String = context.getString(id, *args)
@@ -176,6 +194,10 @@ class SyncEngine(
         val written = linkedMapOf<KClass<out Record>, Int>()
         val denied = linkedSetOf<KClass<out Record>>()
         var skipped = 0
+        /** Measure groups removed because they're gone from Withings. */
+        var removed = 0
+        /** Measurements Withings is waiting for the user to assign. */
+        var unassigned = 0
 
         fun add(records: List<Record>, skipped: Int, result: HealthConnectRepository.InsertResult) {
             this.skipped += skipped
@@ -187,12 +209,19 @@ class SyncEngine(
 
         fun summary(): String {
             val total = written.values.sum()
-            val summary = if (total == 0) {
-                text(R.string.sync_nothing_new)
-            } else {
-                val parts = written.entries.joinToString { (type, n) -> "${HealthConnectRepository.label(context, type)} $n" }
-                context.resources.getQuantityString(R.plurals.sync_wrote, total, total, parts)
+            val wrote = when {
+                total > 0 -> {
+                    val parts = written.entries.joinToString { (type, n) -> "${HealthConnectRepository.label(context, type)} $n" }
+                    context.resources.getQuantityString(R.plurals.sync_wrote, total, total, parts)
+                }
+                removed > 0 -> null
+                else -> text(R.string.sync_nothing_new)
             }
+            val summary = listOfNotNull(
+                wrote,
+                removed.takeIf { it > 0 }?.let { context.resources.getQuantityString(R.plurals.sync_removed, it, it) },
+                unassigned.takeIf { it > 0 }?.let { context.resources.getQuantityString(R.plurals.sync_unassigned, it, it) },
+            ).joinToString(". ")
             if (denied.isEmpty()) return summary
             return text(R.string.sync_no_permission_for, summary, labels(denied))
         }
@@ -212,6 +241,8 @@ class SyncEngine(
 
     private companion object {
         const val SECONDS_PER_DAY = 86_400L
+        /** How far back measurements deleted in Withings are also removed from Health Connect. */
+        const val RECHECK_DAYS = 30L
         const val REFRESH_MARGIN_SECONDS = 300L
         const val SLEEP_CALL_SPACING_MS = 550L
         const val MAX_PAGES = 50

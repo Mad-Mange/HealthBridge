@@ -46,13 +46,21 @@ class WithingsApi(
             mapOf("grant_type" to "refresh_token", "refresh_token" to refreshToken),
         )
 
-    suspend fun getMeasures(accessToken: String, lastUpdate: Long, offset: Int): Page<MeasureGroup> {
+    /** Measures added or changed since [lastUpdate]. Deleted measures are simply missing. */
+    suspend fun getMeasures(accessToken: String, lastUpdate: Long, offset: Int): Page<MeasureGroup> =
+        measures(accessToken, mapOf("lastupdate" to lastUpdate.toString()), offset)
+
+    /** Measures taken between [start] and [end], to find the ones that were deleted in Withings. */
+    suspend fun getMeasuresTakenBetween(accessToken: String, start: Long, end: Long, offset: Int): Page<MeasureGroup> =
+        measures(accessToken, mapOf("startdate" to start.toString(), "enddate" to end.toString()), offset)
+
+    private suspend fun measures(accessToken: String, range: Map<String, String>, offset: Int): Page<MeasureGroup> {
         val params = mutableMapOf(
             "action" to "getmeas",
             "meastypes" to MeasureType.SYNCED.joinToString(","),
             "category" to "1",
-            "lastupdate" to lastUpdate.toString(),
         )
+        params += range
         if (offset > 0) params["offset"] = offset.toString()
         return WithingsParser.parseMeasureGroups(post("/measure", params, accessToken))
     }

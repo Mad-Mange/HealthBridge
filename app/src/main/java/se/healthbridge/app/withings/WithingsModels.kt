@@ -44,6 +44,15 @@ data class MeasureGroup(
 
     /** Withings attrib 2 and 4 mean the user typed the value in by hand. */
     val isManualEntry: Boolean get() = attrib == 2 || attrib == 4
+
+    /**
+     * Attrib 1: the device couldn't tell which of its users took the measurement (e.g. a guest on a
+     * shared scale). Withings asks the user to assign it, and it may end up belonging to someone else.
+     */
+    val isAmbiguous: Boolean get() = attrib == 1
+
+    /** A real measurement that is known to be this user's: not a goal (category 2) or an unassigned one. */
+    val isSyncable: Boolean get() = category == 1 && !isAmbiguous
 }
 
 /** Daily activity aggregate (`date` is yyyy-MM-dd in `timezone`). */

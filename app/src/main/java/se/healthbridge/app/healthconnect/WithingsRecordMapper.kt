@@ -36,6 +36,7 @@ import se.healthbridge.app.withings.SleepSummary
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import kotlin.reflect.KClass
 
 /**
  * Maps Withings data to Health Connect records.
@@ -48,6 +49,23 @@ object WithingsRecordMapper {
 
     data class Mapped(val records: List<Record>, val skipped: Int)
 
+    // Last part of `withings:meas:<grpid>:<suffix>`. Never change one: it identifies records already written.
+    private val MEASURE_SUFFIXES: Map<KClass<out Record>, String> = mapOf(
+        WeightRecord::class to "weight", HeightRecord::class to "height", BodyFatRecord::class to "fat",
+        LeanBodyMassRecord::class to "lean", BoneMassRecord::class to "bone", BodyWaterMassRecord::class to "water",
+        BasalMetabolicRateRecord::class to "bmr", BloodPressureRecord::class to "bp", HeartRateRecord::class to "hr",
+        OxygenSaturationRecord::class to "spo2", BodyTemperatureRecord::class to "temp", Vo2MaxRecord::class to "vo2max",
+    )
+
+    fun measureRecordId(groupId: Long, type: KClass<out Record>): String =
+        "withings:meas:$groupId:${MEASURE_SUFFIXES.getValue(type)}"
+
+    /** Client record ids of everything the given measure groups can have produced, per record type. */
+    fun measureRecordIds(groupIds: Collection<Long>): Map<KClass<out Record>, List<String>> =
+        if (groupIds.isEmpty()) emptyMap()
+        else MEASURE_SUFFIXES.keys.associateWith { type -> groupIds.map { measureRecordId(it, type) } }
+
+    /** Only [MeasureGroup.isSyncable] groups are mapped: goals and unassigned measurements are left out. */
     fun measureGroups(groups: List<MeasureGroup>, defaultZone: ZoneId = ZoneId.systemDefault()): Mapped {
         val records = mutableListOf<Record>()
         var skipped = 0
@@ -56,35 +74,35 @@ object WithingsRecordMapper {
         }
 
         for (group in groups) {
-            if (group.category != 1) continue // 2 = user objectives, not real measurements
+            if (!group.isSyncable) continue
             val time = Instant.ofEpochSecond(group.date)
             val offset = zoneOf(group.timezone, defaultZone).rules.getOffset(time)
             val device = deviceFor(group)
-            fun meta(suffix: String) = metadataFor(group, device, "withings:meas:${group.id}:$suffix")
+            fun meta(type: KClass<out Record>) = metadataFor(group, device, measureRecordId(group.id, type))
 
             group.value(MeasureType.WEIGHT)?.let { v ->
-                add { WeightRecord(time = time, zoneOffset = offset, weight = Mass.kilograms(v), metadata = meta("weight")) }
+                add { WeightRecord(time = time, zoneOffset = offset, weight = Mass.kilograms(v), metadata = meta(WeightRecord::class)) }
             }
             group.value(MeasureType.HEIGHT)?.let { v ->
-                add { HeightRecord(time = time, zoneOffset = offset, height = Length.meters(v), metadata = meta("height")) }
+                add { HeightRecord(time = time, zoneOffset = offset, height = Length.meters(v), metadata = meta(HeightRecord::class)) }
             }
             group.value(MeasureType.FAT_RATIO)?.let { v ->
-                add { BodyFatRecord(time = time, zoneOffset = offset, percentage = Percentage(v), metadata = meta("fat")) }
+                add { BodyFatRecord(time = time, zoneOffset = offset, percentage = Percentage(v), metadata = meta(BodyFatRecord::class)) }
             }
             group.value(MeasureType.FAT_FREE_MASS)?.let { v ->
-                add { LeanBodyMassRecord(time = time, zoneOffset = offset, mass = Mass.kilograms(v), metadata = meta("lean")) }
+                add { LeanBodyMassRecord(time = time, zoneOffset = offset, mass = Mass.kilograms(v), metadata = meta(LeanBodyMassRecord::class)) }
             }
             group.value(MeasureType.BONE_MASS)?.let { v ->
-                add { BoneMassRecord(time = time, zoneOffset = offset, mass = Mass.kilograms(v), metadata = meta("bone")) }
+                add { BoneMassRecord(time = time, zoneOffset = offset, mass = Mass.kilograms(v), metadata = meta(BoneMassRecord::class)) }
             }
             group.value(MeasureType.HYDRATION)?.let { v ->
-                add { BodyWaterMassRecord(time = time, zoneOffset = offset, mass = Mass.kilograms(v), metadata = meta("water")) }
+                add { BodyWaterMassRecord(time = time, zoneOffset = offset, mass = Mass.kilograms(v), metadata = meta(BodyWaterMassRecord::class)) }
             }
             group.value(MeasureType.BASAL_METABOLIC_RATE)?.let { v ->
                 add {
                     BasalMetabolicRateRecord(
                         time = time, zoneOffset = offset,
-                        basalMetabolicRate = Power.kilocaloriesPerDay(v), metadata = meta("bmr"),
+                        basalMetabolicRate = Power.kilocaloriesPerDay(v), metadata = meta(BasalMetabolicRateRecord::class),
                     )
                 }
             }
@@ -93,7 +111,7 @@ object WithingsRecordMapper {
             if (systolic != null && diastolic != null) {
                 add {
                     BloodPressureRecord(
-                        time = time, zoneOffset = offset, metadata = meta("bp"),
+                        time = time, zoneOffset = offset, metadata = meta(BloodPressureRecord::class),
                         systolic = Pressure.millimetersOfMercury(systolic),
                         diastolic = Pressure.millimetersOfMercury(diastolic),
                     )
@@ -106,17 +124,17 @@ object WithingsRecordMapper {
                         startTime = time, startZoneOffset = offset,
                         endTime = time.plusSeconds(1), endZoneOffset = offset,
                         samples = listOf(HeartRateRecord.Sample(time = time, beatsPerMinute = Math.round(v))),
-                        metadata = meta("hr"),
+                        metadata = meta(HeartRateRecord::class),
                     )
                 }
             }
             group.value(MeasureType.SPO2)?.let { v ->
-                add { OxygenSaturationRecord(time = time, zoneOffset = offset, percentage = Percentage(v), metadata = meta("spo2")) }
+                add { OxygenSaturationRecord(time = time, zoneOffset = offset, percentage = Percentage(v), metadata = meta(OxygenSaturationRecord::class)) }
             }
             (group.value(MeasureType.BODY_TEMPERATURE) ?: group.value(MeasureType.TEMPERATURE))?.let { v ->
                 add {
                     BodyTemperatureRecord(
-                        time = time, zoneOffset = offset, metadata = meta("temp"),
+                        time = time, zoneOffset = offset, metadata = meta(BodyTemperatureRecord::class),
                         temperature = Temperature.celsius(v),
                         measurementLocation = BodyTemperatureMeasurementLocation.MEASUREMENT_LOCATION_UNKNOWN,
                     )
@@ -125,7 +143,7 @@ object WithingsRecordMapper {
             group.value(MeasureType.VO2_MAX)?.let { v ->
                 add {
                     Vo2MaxRecord(
-                        time = time, zoneOffset = offset, metadata = meta("vo2max"),
+                        time = time, zoneOffset = offset, metadata = meta(Vo2MaxRecord::class),
                         vo2MillilitersPerMinuteKilogram = v,
                         measurementMethod = Vo2MaxRecord.MEASUREMENT_METHOD_OTHER,
                     )

@@ -64,6 +64,7 @@ class SyncEngineInstrumentedTest {
 
     @Volatile private var weightGrams = 80_450
     @Volatile private var weightModified = weighInAt
+    @Volatile private var sleepStagesStatus = 0
 
     @Before
     fun setUp() = runBlocking {
@@ -155,6 +156,25 @@ class SyncEngineInstrumentedTest {
         assertFalse("a new login clears the flag", settings.current().state.needsLogin)
     }
 
+    @Test
+    fun temporaryErrorOnSleepStagesRetriesTheNight() = runBlocking {
+        val api = WithingsApi(OkHttpClient(), server.url("/").toString().trimEnd('/'))
+        val engine = SyncEngine(context, settings, api, healthConnect, SyncLog(context))
+
+        sleepStagesStatus = 601 // too many requests
+        val first = engine.sync()
+        assertEquals(first.summary, SyncEngine.Outcome.RETRY, first.outcome)
+        assertNotNull("measures were written, so they aren't fetched again", settings.current().state.measuresCursor)
+        assertEquals("sleep must be fetched again", null, settings.current().state.sleepCursor)
+        assertTrue("no session without stages", readTestRecords(SleepSessionRecord::class).isEmpty())
+
+        sleepStagesStatus = 0
+        val second = engine.sync()
+        assertEquals(second.summary, SyncEngine.Outcome.SUCCESS, second.outcome)
+        assertEquals(3, readTestRecords(SleepSessionRecord::class).single().stages.size)
+        assertNotNull(settings.current().state.sleepCursor)
+    }
+
     private suspend fun <T : Record> readTestRecords(type: KClass<T>): List<T> {
         val client = HealthConnectClient.getOrCreate(context)
         val range = TimeRangeFilter.between(Instant.now().minus(Duration.ofDays(1)), Instant.now().plusSeconds(60))
@@ -190,6 +210,8 @@ class SyncEngineInstrumentedTest {
                     {"status":0,"body":{"more":false,"offset":0,"series":[
                      {"id":900003,"startdate":$sleepStart,"enddate":$sleepEnd,"timezone":"Europe/Stockholm","model":32,"modified":$sleepEnd}]}}
                 """.trimIndent()
+                path == "/v2/sleep" && form["action"] == "get" && sleepStagesStatus != 0 ->
+                    """{"status":$sleepStagesStatus,"error":"Too many requests"}"""
                 path == "/v2/sleep" && form["action"] == "get" -> """
                     {"status":0,"body":{"series":[
                      {"startdate":$sleepStart,"enddate":${sleepStart + 3600},"state":1},

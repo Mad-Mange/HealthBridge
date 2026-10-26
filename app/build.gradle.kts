@@ -19,6 +19,15 @@ fun buildConfigString(key: String): String {
     return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
 }
 
+// Release signing key: environment variables in CI, local.properties on a developer machine:
+//   release.storeFile=C:/path/to/healthbridge-release.jks
+//   release.storePassword=...   release.keyAlias=...   release.keyPassword=...
+// Without them the release APK is built unsigned.
+fun signingValue(key: String, env: String): String? =
+    System.getenv(env)?.takeIf { it.isNotBlank() } ?: localProps.getProperty(key)?.takeIf { it.isNotBlank() }
+
+val releaseStoreFile = signingValue("release.storeFile", "RELEASE_STORE_FILE")
+
 android {
     namespace = "se.healthbridge.app"
     compileSdk = 37
@@ -37,8 +46,20 @@ android {
         buildConfigField("String", "WITHINGS_REDIRECT_URI", buildConfigString("withings.redirectUri"))
     }
 
+    signingConfigs {
+        if (releaseStoreFile != null) {
+            create("release") {
+                storeFile = file(releaseStoreFile)
+                storePassword = signingValue("release.storePassword", "RELEASE_STORE_PASSWORD")
+                keyAlias = signingValue("release.keyAlias", "RELEASE_KEY_ALIAS")
+                keyPassword = signingValue("release.keyPassword", "RELEASE_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.findByName("release")
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }

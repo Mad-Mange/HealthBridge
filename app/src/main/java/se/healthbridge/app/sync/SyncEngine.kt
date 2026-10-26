@@ -92,16 +92,14 @@ class SyncEngine(
         val session = Session(current.credentials, tokens)
         val backfillStart = startedAt - options.backfillDays * SECONDS_PER_DAY
         val tally = Tally()
-        var measuresCursor: Long? = null
-        var sleepCursor: Long? = null
-        var activityCursor: Long? = null
 
+        // Each category saves its cursor as soon as it's written, so a later failure doesn't fetch it again.
         if (options.measures) {
             val since = current.state.measuresCursor ?: backfillStart
             val groups = fetchAll { offset -> session.call { api.getMeasures(it, since, offset) } }
             val mapped = WithingsRecordMapper.measureGroups(groups)
             tally.add(mapped.records, mapped.skipped, healthConnect.insert(mapped.records))
-            measuresCursor = startedAt
+            settings.saveCursors(measures = startedAt, sleep = null, activity = null)
         }
 
         if (options.sleep) {
@@ -111,15 +109,17 @@ class SyncEngine(
                 if (index > 0) delay(SLEEP_CALL_SPACING_MS) // stay under Withings' 120 requests/minute
                 val segments = try {
                     session.call { api.getSleepSegments(it, summary.start, summary.end) }
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    emptyList() // still write the session, just without stages
+                } catch (e: WithingsException) {
+                    // A night Withings has no stages for is still written, just without them. Network,
+                    // overload and login errors fail the run instead: the cursor stays put, so the
+                    // night is fetched again with its stages on the next try.
+                    if (e is WithingsAuthException || e.status == null || e.status in TRANSIENT_STATUSES) throw e
+                    emptyList()
                 }
                 WithingsRecordMapper.sleep(summary, segments)
             }
             tally.add(records, summaries.size - records.size, healthConnect.insert(records))
-            sleepCursor = startedAt
+            settings.saveCursors(measures = null, sleep = startedAt, activity = null)
         }
 
         if (options.activity) {
@@ -127,10 +127,8 @@ class SyncEngine(
             val days = fetchAll { offset -> session.call { api.getActivity(it, since, offset) } }
             val mapped = WithingsRecordMapper.activities(days, Instant.ofEpochSecond(startedAt))
             tally.add(mapped.records, mapped.skipped, healthConnect.insert(mapped.records))
-            activityCursor = startedAt
+            settings.saveCursors(measures = null, sleep = null, activity = startedAt)
         }
-
-        settings.saveCursors(measuresCursor, sleepCursor, activityCursor)
 
         if (tally.denied.isNotEmpty()) {
             log.warn(text(R.string.sync_denied_warning, labels(tally.denied)))

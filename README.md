@@ -1,5 +1,8 @@
 # HealthBridge
 
+[![CI](https://github.com/Mad-Mange/HealthBridge/actions/workflows/ci.yml/badge.svg)](https://github.com/Mad-Mange/HealthBridge/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/Mad-Mange/HealthBridge)](https://github.com/Mad-Mange/HealthBridge/releases/latest)
+
 **A small Android app that moves your Withings data into Samsung Health through Health Connect.**
 It's a hobby project that replaces Health Sync for the *Withings → Samsung Health* flow on a
 Samsung Galaxy S24 Ultra, but it works on any phone with Android 9 or later and Health Connect.
@@ -74,17 +77,31 @@ withings.clientSecret=...
 withings.redirectUri=https://example.com/
 ```
 
-### 2. Build and install
+### 2. Install the app
 
-Turn on developer mode on the phone: *Settings → About phone → Software information*, tap
-*Build number* 7 times. Then turn on *Developer options → USB debugging*. Connect the phone and run:
+**From GitHub (easiest).** On the phone, open
+[the latest release](https://github.com/Mad-Mange/HealthBridge/releases/latest) and download
+`HealthBridge-<version>.apk`. Open the downloaded file and allow your browser to install unknown
+apps when Android asks. On a Samsung phone:
+
+- If the install is blocked outright, turn off *Settings → Security and privacy → Auto Blocker*
+  while you install, and turn it back on afterwards.
+- If Play Protect warns about an unknown app, choose *More details → Install anyway*.
+
+New versions install over the old one the same way, and your login and settings are kept.
+
+**Or build it yourself.** Turn on developer mode on the phone: *Settings → About phone → Software
+information*, tap *Build number* 7 times. Then turn on *Developer options → USB debugging*. Connect
+the phone and run:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\build-and-install.ps1
 ```
 
-The script builds, installs and starts the app. Without a connected phone it prints the path to
-`app\build\outputs\apk\debug\app-debug.apk`, which you can also copy to the phone and install by hand.
+The script builds, installs and starts the app. Without a connected phone it prints the path to the
+APK, which you can also copy to the phone and install by hand. Without the release key (see
+[Releases](#releases)) it builds a debug version signed with your computer's debug key. That can't
+install over the version from GitHub, or the other way round, without uninstalling first.
 
 Building needs JDK 17 or later and the Android SDK (compileSdk 37). The project also opens directly
 in Android Studio.
@@ -167,6 +184,30 @@ UI text lives in `res/values/strings.xml` (English, the default) and `res/values
   app all permissions first.
 - If Hyper-V has reserved the emulator's default ports (5554–5585) it won't start. Pick another port:
   `emulator -avd <name> -port 5640`. If the emulator has no DNS, add `-dns-server 8.8.8.8`.
+- GitHub Actions runs the unit tests and builds both APKs on every push.
+
+### Releases
+
+Release APKs are signed with a key that never leaves the maintainer's computer. Its location and
+passwords go in `local.properties`:
+
+```properties
+release.storeFile=C:/Users/<you>/.android/healthbridge-release.jks
+release.storePassword=...
+release.keyAlias=healthbridge
+release.keyPassword=...
+```
+
+To publish a version, raise `versionCode` and `versionName` in `app/build.gradle.kts`, commit, and run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\release.ps1 [-NotesFile notes.md]
+```
+
+The script runs the unit tests, builds and verifies the signed APK, tags `v<versionName>` and
+creates the GitHub release with the APK attached. It refuses to run if `local.properties` has
+Withings credentials, because they would be built into the public APK. Keep a backup of the key:
+without it, a new version can't be installed over the old one.
 
 ---
 

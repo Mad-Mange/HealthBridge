@@ -1,2 +1,1 @@
-Har en app på telefonen som heter Healt Sync som skickar data från Withings och Samsung Health. Skall testa att skapa en egen app som gör det. Skall fungera på en Samsung Ultra 24.
-
+I have an app on my phone called Health Sync that sends data from Withings to Samsung Health. I want to try building my own app that does the same. It has to work on a Samsung Galaxy S24 Ultra.

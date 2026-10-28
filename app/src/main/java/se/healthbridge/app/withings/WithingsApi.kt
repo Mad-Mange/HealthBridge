@@ -139,5 +139,6 @@ class WithingsApi(
         const val SCOPES = "user.info,user.metrics,user.activity"
         // Withings may check that the callback answers 200; example.com's root does, sub-paths are 404.
         const val DEFAULT_REDIRECT_URI = "https://example.com/"
+        const val DEVELOPER_DASHBOARD_URL = "https://developer.withings.com/dashboard/"
     }
 }

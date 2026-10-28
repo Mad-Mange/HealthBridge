@@ -40,6 +40,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import se.healthbridge.app.BuildConfig
 import se.healthbridge.app.R
 import se.healthbridge.app.appContainer
+import se.healthbridge.app.withings.WithingsApi
 
 private val INTERVALS = listOf(1, 3, 6, 12, 24)
 private val BACKFILL = listOf(7, 30, 90, 365)
@@ -100,7 +101,7 @@ fun SettingsScreen(vm: MainViewModel, onRequestPermissions: () -> Unit) {
                 onClick = { vm.saveCredentials(clientId, clientSecret, redirectUri) },
                 enabled = clientId != creds.clientId || clientSecret != creds.clientSecret || redirectUri != creds.redirectUri,
             ) { Text(stringResource(R.string.save)) }
-            OutlinedButton(onClick = { openUrl(context, "https://developer.withings.com/dashboard/") }) {
+            OutlinedButton(onClick = { openUrl(context, WithingsApi.DEVELOPER_DASHBOARD_URL) }) {
                 Text(stringResource(R.string.open_withings_developer))
             }
         }
@@ -216,7 +217,7 @@ private fun ChipRow(values: List<Int>, selected: Int, label: @Composable (Int) -
     }
 }
 
-private fun openUrl(context: android.content.Context, url: String) {
+internal fun openUrl(context: android.content.Context, url: String) {
     try {
         context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
     } catch (_: ActivityNotFoundException) {

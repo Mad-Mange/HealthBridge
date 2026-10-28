@@ -166,7 +166,7 @@
     <!-- Settings -->
     <string name="settings_title">Settings</string>
     <string name="settings_withings_app">Withings developer app</string>
-    <string name="settings_withings_help">Create an app (Public API) at developer.withings.com and enter exactly the same callback URL there as here, including the slash at the end. https://example.com/ works fine, because HealthBridge catches the redirect before the page loads.</string>
+    <string name="settings_withings_help">Create an app (Public API) at developer.withings.com and enter exactly the same callback URL there as here, www and the slash at the end included. https://example.com/ works fine, because HealthBridge catches the redirect before the page loads.</string>
     <string name="client_id" translatable="false">Client ID</string>
     <string name="client_secret" translatable="false">Client Secret</string>
     <string name="callback_url">Callback URL</string>
@@ -175,7 +175,7 @@
     <string name="save">Save</string>
     <string name="open_withings_developer">Open Withings Developer</string>
     <string name="callback_mismatch_title">The callback URL doesn\'t match</string>
-    <string name="callback_mismatch_body">Withings refused the login because the callback URL HealthBridge sent, %1$s, isn\'t the one registered for your app at developer.withings.com. They must be exactly the same, including the slash at the end.\n\nOpen your app in Withings Developer and look at its callback URL. Change it to %1$s there, or enter the value from Withings under Settings → Callback URL and tap Save. Then log in again.</string>
+    <string name="callback_mismatch_body">Withings refused the login because the callback URL HealthBridge sent, %1$s, isn\'t the one registered for your app at developer.withings.com. They must be exactly the same, www and the slash at the end included.\n\nOpen your app in Withings Developer and look at its callback URL. Change it to %1$s there, or enter the value from Withings under Settings → Callback URL and tap Save. Then log in again.</string>
     <string name="settings_connection">Connection</string>
     <string name="settings_connected_as">Connected as user ID %1$s</string>
     <string name="disconnect_withings">Disconnect Withings</string>

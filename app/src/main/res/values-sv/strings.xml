@@ -143,14 +143,14 @@
 
     <string name="settings_title">Inställningar</string>
     <string name="settings_withings_app">Withings-utvecklarapp</string>
-    <string name="settings_withings_help">Skapa en app (Public API) på developer.withings.com och ange exakt samma Callback-URL där som här, även snedstrecket på slutet. https://example.com/ fungerar bra, eftersom HealthBridge fångar omdirigeringen innan sidan laddas.</string>
+    <string name="settings_withings_help">Skapa en app (Public API) på developer.withings.com och ange exakt samma Callback-URL där som här, även www och snedstrecket på slutet. https://example.com/ fungerar bra, eftersom HealthBridge fångar omdirigeringen innan sidan laddas.</string>
     <string name="callback_url">Callback-URL</string>
     <string name="show">Visa</string>
     <string name="hide">Dölj</string>
     <string name="save">Spara</string>
     <string name="open_withings_developer">Öppna Withings Developer</string>
     <string name="callback_mismatch_title">Callback-URL:en stämmer inte</string>
-    <string name="callback_mismatch_body">Withings nekade inloggningen eftersom Callback-URL:en som HealthBridge skickade, %1$s, inte är den som är registrerad för din app på developer.withings.com. De måste vara exakt likadana, även snedstrecket på slutet.\n\nÖppna din app i Withings Developer och titta på dess Callback-URL. Ändra den där till %1$s, eller skriv in värdet från Withings under Inställningar → Callback-URL och tryck Spara. Logga sedan in igen.</string>
+    <string name="callback_mismatch_body">Withings nekade inloggningen eftersom Callback-URL:en som HealthBridge skickade, %1$s, inte är den som är registrerad för din app på developer.withings.com. De måste vara exakt likadana, även www och snedstrecket på slutet.\n\nÖppna din app i Withings Developer och titta på dess Callback-URL. Ändra den där till %1$s, eller skriv in värdet från Withings under Inställningar → Callback-URL och tryck Spara. Logga sedan in igen.</string>
     <string name="settings_connection">Anslutning</string>
     <string name="settings_connected_as">Ansluten som användar-ID %1$s</string>
     <string name="disconnect_withings">Koppla från Withings</string>

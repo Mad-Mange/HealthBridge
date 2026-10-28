@@ -71,6 +71,8 @@ collected from the phone aren't written back.
 2. Set the **Callback URL** to `https://example.com/`. The app catches the redirect before the page
    loads, so the address doesn't have to be yours. It should still answer HTTP 200, because Withings
    may check that it's reachable. `example.com/` does, `example.com/anything` doesn't.
+   Whatever you enter, HealthBridge needs exactly the same address, `www` and the slash at the end
+   included: `https://www.example.com` and `https://example.com/` are different to Withings.
 3. Copy the **Client ID** and **Client Secret**.
 
 Enter them in the app under *Settings*, or put them in `local.properties` before building to have
@@ -143,6 +145,10 @@ app, the home screen shows *Log in again* and you get a notification:
 
 The *Log* tab lists every run: what was written, what was skipped and why.
 
+- **Login ends with *The callback URL doesn't match*?** Withings refuses the login unless the
+  callback URL under *Settings* is character for character the one in your
+  [Withings developer app](https://developer.withings.com/dashboard/). Copy it from there, tap
+  *Save* and log in again.
 - **Granted a permission later or changed the history period?** Choose *Refetch history* under
   Settings. Values that were already written are updated, not duplicated.
 - **Not syncing in the background?** Check that HealthBridge has *Unrestricted* battery use
@@ -159,9 +165,9 @@ The *Log* tab lists every run: what was written, what was skipped and why.
 - **Deletions only for measurements.** Withings' API doesn't report deletions, so HealthBridge
   compares the last 30 days of measurements (weight, blood pressure and so on) on every run.
   Sleep and steps you delete in Withings stay in Health Connect; remove them there if needed.
-- **Not tested against a real Withings account yet.** The whole sync flow is tested in the emulator
-  against a fake Withings server and the real Health Connect. Login and error handling are tested
-  against Withings' real server, but with made-up credentials.
+- **Tried on one setup.** HealthBridge is in use with a real Withings account on a Galaxy S24 Ultra.
+  Other phones and Withings devices haven't been tried. The whole sync flow is also tested in the
+  emulator against a fake Withings server and the real Health Connect.
 
 ## Development
 
